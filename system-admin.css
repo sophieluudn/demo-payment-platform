@@ -1,0 +1,79 @@
+/* Scoped styles for system management. */
+.system-admin .sys-context{display:flex;align-items:end;flex-wrap:wrap;gap:16px;margin-bottom:12px;padding:14px 16px;background:#f5f7fa;border:1px solid #e1e5eb;border-radius:4px}
+.system-admin .sys-context label{display:flex;flex-direction:column;gap:6px;font-weight:500}
+.system-admin .sys-context select{color:#4b5563;min-width:175px;max-width:300px}
+.system-admin #sys-content .toolbar{min-height:65px;padding:12px 15px;gap:14px}
+.system-admin #sys-content .toolbar input{width:280px;max-width:100%}
+.system-admin #sys-content .toolbar button{position:static}
+.system-admin #sys-content th{color:#58677b}
+.system-admin #sys-content .empty{color:#58677b}
+.system-admin #sys-content .sys-pager{height:auto;min-height:36px;margin-bottom:14px;flex-wrap:wrap;gap:12px}
+.system-admin .sys-pager .btn{font-size:12px;padding:6px 10px}
+.system-admin #sys-content button:disabled{cursor:not-allowed;opacity:.55}
+.system-admin #sys-content .btn.primary{background:var(--color-primary)}
+.system-admin #sys-content .btn.success{background:var(--color-success)}
+.system-admin #sys-content input[type=checkbox]{height:17px;width:17px;padding:0;accent-color:var(--color-primary);vertical-align:middle}
+.system-admin #sys-content input:disabled,.system-admin #sys-content select:disabled{opacity:.55;cursor:not-allowed}
+.system-admin #sys-content select{color:#4b5563}
+.system-admin #sys-content input::placeholder{color:#697586}
+.system-admin #sys-content small{color:#566477;font-size:12px}
+.system-admin #sys-content .sys-permissions{text-align:left;margin-top:8px}
+.system-admin #sys-content .sys-permissions summary{height:auto;padding:4px 0;list-style:disclosure-closed;color:var(--color-primary);font-size:12px}
+.system-admin #sys-content .sys-permissions summary:hover{background:transparent}
+.system-admin #sys-content .sys-permissions ul{padding-left:20px;margin:6px 0;font-size:12px;line-height:1.8}
+.system-admin .sys-form-fields{display:grid;grid-template-columns:repeat(2,minmax(160px,320px));gap:24px;margin:24px 0}
+.system-admin .sys-form-fields label{display:flex;flex-direction:column;gap:8px}
+.system-admin .sys-form-fields input,.system-admin .sys-form-fields select{width:100%}
+.system-admin .sys-form-fields input[readonly]{background:#f5f7fa}
+.system-admin .sys-editor-title{font-size:20px;color:#303133;font-weight:500;margin:8px 0 20px}
+.system-admin .sys-editor-title:focus{outline:0}
+.system-admin .sys-form-actions,.system-admin .sys-modes{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}
+.system-admin .sys-fee-scope{display:flex;gap:20px;align-items:center;flex-wrap:wrap;margin:20px 0}
+.system-admin .sys-fee-scope label{display:flex;gap:10px;align-items:center}
+.system-admin .sys-fee-scope span{color:#566477;font-size:13px}
+.system-admin .sys-error{color:#a42e24;line-height:1.8}
+.system-admin .sys-empty{text-align:center;padding:40px 10px}
+.system-admin .sys-empty h2{font-size:20px;font-weight:500}
+.system-admin #sys-feedback{position:fixed;bottom:20px;right:20px;max-width:min(540px,calc(100vw - 40px));padding:14px 18px;background:#304156;color:#fff;border-radius:4px;box-shadow:0 5px 20px #0002;z-index:20;line-height:1.7}
+.system-admin main a{color:var(--color-primary)}
+.system-admin main input:focus-visible,.system-admin main select:focus-visible,.system-admin main button:focus-visible{outline:2px solid var(--color-primary);outline-offset:3px}
+.system-admin main ::selection{background:#dcecff;color:#214367}
+@media(max-width:1000px){.system-admin .sys-context{align-items:stretch}.system-admin #sys-content .toolbar .right{max-width:100%}.system-admin .sys-form-fields{gap:16px}}
+@media(max-width:600px){.system-admin .sys-context{padding:12px}.system-admin .sys-context label{width:100%}.system-admin .sys-context select{min-width:0;width:100%;max-width:100%}.system-admin .sys-form-fields{grid-template-columns:1fr}.system-admin .sys-fee-scope label{flex-direction:column;align-items:start;width:100%}.system-admin .sys-fee-scope select{max-width:100%;width:100%}.system-admin #sys-content .toolbar .right{flex-direction:column;width:100%}.system-admin #sys-content .toolbar input{width:100%}.system-admin #sys-content .sys-pager{gap:8px}.system-admin #sys-content .sys-pager select{max-width:90px}}
+
+.system-admin aside a[hidden]{display:none}
+
+/* Payment tool dialog follows the existing settings form. */
+.sys-payment-dialog{width:min(1092px,calc(100vw - 40px));max-height:calc(100dvh - 40px);padding:0;border:0;border-radius:4px;background:#fff;color:#606266;box-shadow:0 12px 36px #0003;font:14px "Noto Sans TC",sans-serif}
+.sys-payment-dialog::backdrop{background:#0006}
+.sys-modal-header{display:flex;align-items:center;justify-content:space-between;padding:16px 12px}
+.sys-modal-header h2{margin:0;font-size:18px;font-weight:400;color:#303133}
+.sys-modal-close{display:flex;align-items:center;justify-content:center;width:28px;height:28px;padding:6px;border:0;background:transparent;cursor:pointer}
+.sys-modal-close img{width:16px;height:16px}
+.sys-payment-fields{display:flex;flex-direction:column;gap:30px;padding:28px 36px 0 42px}
+.sys-payment-fields>label{display:grid;grid-template-columns:138px minmax(0,1fr);gap:12px;align-items:center}
+.sys-payment-fields>label>span{text-align:right;font-weight:600}
+.sys-payment-fields em{font-style:normal;color:#ff4949}
+.sys-payment-fields input,.sys-payment-fields select{height:32px;width:100%;color:#606266}
+.sys-payment-fields input:focus,.sys-payment-fields select:focus{outline:1px solid var(--color-primary)}
+.sys-payment-fields .sys-code-field{align-items:start}
+.sys-code-field>span{padding-top:6px}
+.sys-code-field p{margin:6px 0 14px;line-height:20px}
+.sys-payment-fee{display:flex;gap:12px}
+.sys-payment-fee input{width:130px;text-align:center}
+.sys-payment-fee select{width:80px}
+.sys-payment-fields select[name=currency]{width:222px;max-width:100%}
+.sys-modal-actions{display:flex;justify-content:flex-end;gap:14px;padding:46px 36px 14px}
+.sys-payment-dialog .sys-error{margin:16px 36px 0 192px;color:#a42e24}
+.sys-payment-dialog .sys-error:empty{display:none}
+.sys-payment-dialog button:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+@media(max-width:600px){.sys-payment-dialog{width:calc(100vw - 24px);max-height:calc(100dvh - 24px)}.sys-payment-fields{padding:20px 20px 0;gap:20px}.sys-payment-fields>label{grid-template-columns:1fr;gap:8px}.sys-payment-fields>label>span{text-align:left}.sys-code-field>span{padding-top:0}.sys-modal-actions{padding:30px 20px 20px}.sys-payment-dialog .sys-error{margin:16px 20px 0}}
+.system-admin .sys-users-search{display:flex;align-items:center;flex-wrap:wrap;gap:12px;min-height:70px}.sys-users-search>label{font-weight:600}.sys-users-search select{width:200px;color:#606266}.sys-users-search input{width:280px}.system-admin .sys-users-search>.btn:last-child:not(:first-child){position:static}.sys-users-list-toolbar{display:flex;align-items:center;min-height:40px;margin:0 0 12px}.sys-users-list-toolbar+.sys-pager{margin-top:0}@media(max-width:600px){.sys-users-search>label{width:100%}.sys-users-search input,.sys-users-search select{width:100%}}
+.sys-users-list-toolbar{justify-content:space-between;flex-wrap:wrap;gap:12px}.system-admin .sys-users-list-toolbar>.sys-pager{margin:0 0 0 auto;height:auto;min-height:32px;justify-content:flex-end}@media(max-width:700px){.system-admin .sys-users-list-toolbar>.sys-pager{flex-wrap:wrap;gap:8px}}
+.system-admin .sys-users-list-toolbar>.sys-pager{margin:0 auto 0 0;justify-content:flex-start}.sys-users-list-toolbar>[data-action="new-user"]{margin-left:auto}
+.sys-user-grant-line{min-height:32px;display:flex;align-items:center;justify-content:center;padding:4px 0}
+.system-admin #sys-search.sys-users-search input,.system-admin #sys-search.sys-users-search select,.system-admin #sys-search.sys-users-search>.btn{box-sizing:border-box;height:40px;min-height:40px;max-height:40px;margin-top:0;margin-bottom:0}.system-admin #sys-search.sys-users-search>.btn{padding-top:0;padding-bottom:0;align-self:center;display:inline-flex;align-items:center;justify-content:center}
+.system-admin #sys-content .filter input:not([type=radio]):not([type=checkbox]),.system-admin #sys-content .filter select,.system-admin #sys-content .filter .btn,.system-admin .sys-context select{box-sizing:border-box;height:40px;min-height:40px;max-height:40px;margin-top:0;margin-bottom:0}.system-admin #sys-content .filter .btn{padding-top:0;padding-bottom:0;align-self:center;display:inline-flex;align-items:center;justify-content:center}
+.system-admin #sys-search.sys-users-search{align-items:flex-end;gap:16px}.sys-users-search-field{display:flex;flex-direction:column;gap:8px}.sys-users-search-field>label{font-weight:600}.sys-users-search-actions{display:flex;align-items:center;gap:12px}.system-admin #sys-search.sys-users-search .sys-users-search-actions>.btn{height:40px;min-height:40px;max-height:40px;padding-top:0;padding-bottom:0;display:inline-flex;align-items:center;justify-content:center}@media(max-width:600px){.sys-users-search-field{width:100%}.sys-users-search-actions{margin-left:auto}}
+.system-admin #sys-search.sys-users-search{container-type:inline-size;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:16px;row-gap:20px;align-items:end}.sys-users-search-field{min-width:0}.system-admin #sys-search.sys-users-search .sys-users-search-field input,.system-admin #sys-search.sys-users-search .sys-users-search-field select{width:100%;min-width:0;max-width:100%}.sys-users-search-actions{justify-content:flex-end;margin-left:0}#sys-content{container-type:inline-size}@container(max-width:940px){.system-admin #sys-search.sys-users-search{grid-template-columns:repeat(2,minmax(0,1fr))}}@container(max-width:480px){.system-admin #sys-search.sys-users-search{grid-template-columns:minmax(0,1fr)}}
+.system-admin #sys-search.sys-roles-search{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:20px 16px;align-items:end}.sys-roles-search .sys-users-search-field input,.sys-roles-search .sys-users-search-field select{width:100%;height:40px;min-width:0;max-width:100%;color:#606266}.sys-roles-search .sys-users-search-actions{grid-column:4}.sys-roles-search .sys-users-search-actions .btn{height:40px;min-height:40px;max-height:40px;padding-top:0;padding-bottom:0;display:inline-flex;align-items:center;justify-content:center}.sys-roles-list-toolbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:12px}.sys-roles-list-toolbar .sys-pager{margin:0 auto 0 0}.sys-roles-list-toolbar>.success{margin-left:auto}@container(max-width:940px){.system-admin #sys-search.sys-roles-search{grid-template-columns:repeat(2,minmax(0,1fr))}.sys-roles-search .sys-users-search-actions{grid-column:2}}@container(max-width:480px){.system-admin #sys-search.sys-roles-search{grid-template-columns:1fr}.sys-roles-search .sys-users-search-actions{grid-column:1}}

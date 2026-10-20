@@ -1,0 +1,33 @@
+{
+  "unchanged": {
+    "index.html": "105c94cdf4c35569e793ede550f1e1824c44b141d6d9c8b69b8172974ea577ed",
+    "transactions.html": "cf3fc46e4ca205da01a1bcd51db63583320e83b91d88d151f7a4d691648485f1",
+    "products.html": "4eb9e80112e6c62bc38878869c22a97bac67489ec6170377f3a733f12bcf9009",
+    "tags.html": "319c1b19d373f4865eeb5df68a80aa8a528dfb331badf05fbc4b83fd9066b70d",
+    "statistics.html": "889f34504dd9c8082c14fa9f6f606c08d1efaa637ba9dd69e572f80589b9ee5a",
+    "statements.html": "3d687ae35e3b06bfa010b27cdfe06e38b4daa445e3bfe488fdea42abaf91f4dc",
+    "style.css": "24ad593be31aa34112605180b3a357949435c06c997f5bd9646d14c042ac2ca3"
+  },
+  "shells": {
+    "users.html": {
+      "aside": "6646741634c8c990eeb32a37ecbfe972608240cf9e9a376b8f5dbc7787b19931",
+      "header": "cd03f385529281bf211436a496e93071bff1201f9e40ca9664e0334d350c4db0"
+    },
+    "roles.html": {
+      "aside": "7fee6a2bbfaae9c9b15f2f111b0ec68e89d3ab3680c7bc585f295b2c4314f8bd",
+      "header": "9c97a2f18ef4df491e0547f9a854203abc8eb19b47ff041ff9b7ec67664f2311"
+    },
+    "stores.html": {
+      "aside": "d77bd31c56f94b2fa106b8582aecc687eb7bb51b7d2a3ac237f734cbb105d325",
+      "header": "0f9e3131e8dbe381965984daeef1fb9d11e71bbfddb1c187762e65afcbd1fc4b"
+    },
+    "projects.html": {
+      "aside": "09b723d4278e96c51dbd6c287f3b8f342082569a37d4c5ed65a00bbcbc21633f",
+      "header": "67c9a806e7d15f46a56df4eb6c5187ea258e610d4256c1834664207ca3ea821c"
+    },
+    "payments.html": {
+      "aside": "26ee1697522e84c7a14eef1cd3d68d33d3cc9c9b03669e0fc7bb1d8802086dac",
+      "header": "8154de7aad2011eb70b6e6ffedcf19594120e226ce01be26440b018edee2d8a2"
+    }
+  }
+}

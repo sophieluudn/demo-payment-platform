@@ -1,0 +1,230 @@
+.role-modal {
+  width: 70vw;
+  max-width: 1200px;
+  max-height: calc(100dvh - 64px);
+  margin: 5vh auto;
+  padding: 24px;
+  border: 0;
+  border-radius: 4px;
+  background: #fff;
+  color: #606266;
+  overflow: auto;
+}
+.role-modal::backdrop {
+  background: #0008;
+}
+.role-modal-heading {
+  position: relative;
+  margin-bottom: 24px;
+}
+.role-modal h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 500;
+  color: #303133;
+}
+.role-close {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: #909399;
+  cursor: pointer;
+}
+.role-basics {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.role-basics > label,
+.role-setting-row {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+}
+.role-setting-label {
+  text-align: right;
+  font-weight: 600;
+  color: #606266;
+}
+.role-note .role-setting-label,
+.role-permissions-row .role-setting-label {
+  align-self: start;
+  padding-top: 10px;
+}
+.role-permissions-row {
+  align-items: start;
+}
+.role-basics input,
+.role-basics select {
+  width: 100%;
+  height: 40px;
+  padding: 0 15px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  color: #606266;
+  background: #fff;
+}
+.role-basics select:disabled {
+  background-color: #f5f7fa;
+  color: #909399;
+}
+.role-note textarea {
+  font: inherit;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  padding: 10px 15px;
+  resize: vertical;
+  color: #606266;
+  width: 100%;
+}
+.role-status-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.role-status-controls > span:last-of-type {
+  color: #409eff;
+}
+.role-status-switch {
+  width: 40px;
+  height: 20px;
+  border: 0;
+  border-radius: 10px;
+  background: #c0c4cc;
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.role-status-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+}
+.role-status-switch[aria-checked="true"] {
+  background: #409eff;
+}
+.role-status-switch[aria-checked="true"]::after {
+  left: 22px;
+}
+.role-modal input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: #409eff;
+}
+.role-modal input[hidden] {
+  display: none;
+}
+.role-permission-grid {
+  display: block;
+  overflow: auto;
+  width: 100%;
+}
+.role-permission-table {
+  min-width: 0;
+  width: 100%;
+  border-collapse: collapse;
+}
+.role-permission-table th,
+.role-permission-table td {
+  text-align: left;
+  height: 52px;
+  padding: 12px 16px;
+  border: 1px solid #ebeef5;
+}
+.role-permission-table thead th {
+  background: #f5f7fa;
+  color: #606266;
+  font-weight: 600;
+}
+.role-permission-table th:first-child {
+  width: 160px;
+}
+.role-permission-table tbody th {
+  font-weight: 600;
+  color: #303133;
+  background: #fafafa;
+}
+.role-permission-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px 24px;
+}
+.role-permission-options label {
+  padding: 0;
+  margin: 0;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.role-permission-options .role-group-toggle {
+  border: 0;
+  border-right: 1px solid #ebeef5;
+  padding-right: 20px;
+  margin: 0;
+}
+.role-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 32px;
+}
+.role-error {
+  color: #c03639;
+  margin: 10px 0 0 116px;
+}
+.role-modal [hidden] {
+  display: none;
+}
+.role-modal-open {
+  overflow: hidden;
+}
+@media (max-width: 1000px) {
+  .role-modal {
+    width: 90vw;
+  }
+}
+@media (max-width: 600px) {
+  .role-modal {
+    width: calc(100vw - 24px);
+    margin: 12px auto;
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+  }
+  .role-basics > label,
+  .role-setting-row {
+    grid-template-columns: 80px minmax(0, 1fr);
+    gap: 12px;
+  }
+  .role-permission-table th:first-child {
+    width: 105px;
+  }
+  .role-permission-table th,
+  .role-permission-table td {
+    padding: 12px 10px;
+  }
+  .role-permission-options {
+    gap: 12px 16px;
+  }
+  .role-error {
+    margin-left: 0;
+  }
+}

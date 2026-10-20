@@ -1,0 +1,17 @@
+{
+  "name": "payment-platform",
+  "version": "1.0.0",
+  "main": "app.js",
+  "scripts": {
+    "test": "node --test tests/system-model.test.js",
+    "start": "node server.js",
+    "test:browser": "playwright test"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "System management for the payment platform",
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
