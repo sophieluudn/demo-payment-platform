@@ -1,8 +1,43 @@
-const {test,expect}=require('@playwright/test');
-test('store role creation, scoped search, edit modal and manager isolation',async({page})=>{
- await page.goto('/roles.html');await expect(page.locator('#sys-role-store')).toHaveValue('');await page.getByRole('button',{name:'新增',exact:true}).click();
- const create=page.getByRole('dialog',{name:'新增角色'});await create.getByLabel('商店',{exact:true}).selectOption('edu');await create.getByLabel('角色名稱',{exact:true}).fill('教育專案管理員');await create.getByLabel('備註',{exact:true}).fill('教育角色');await create.getByLabel('交易紀錄檢視',{exact:true}).check();await page.screenshot({path:'test-results/role-modal.png'});await create.getByRole('button',{name:'儲存設定',exact:true}).click();
- await page.locator('#sys-role-store').selectOption('u');await expect(page.getByRole('row').filter({hasText:'教育專案管理員'})).toHaveCount(0);
- await page.locator('#sys-role-store').selectOption('edu');const row=page.getByRole('row').filter({hasText:'教育專案管理員'});await row.getByRole('button',{name:'編輯',exact:true}).click();const edit=page.getByRole('dialog',{name:'編輯角色'});await expect(edit.getByLabel('備註',{exact:true})).toHaveValue('教育角色');await edit.getByLabel('角色名稱',{exact:true}).fill('教育自訂角色');await edit.getByRole('button',{name:'儲存設定',exact:true}).click();
- await page.evaluate(()=>{const key='payment-system-management-v2';const saved=JSON.parse(localStorage.getItem(key));saved.currentUserId='big';saved.store='edu';localStorage.setItem(key,JSON.stringify(saved));});await page.reload();await expect(page.locator('#sys-role-store')).toHaveValue('edu');await expect(page.getByRole('row').filter({hasText:'教育自訂角色'})).toHaveCount(1);await expect(page.getByRole('row').filter({hasText:'交易檢視角色'})).toHaveCount(0);
+const { test, expect } = require("@playwright/test");
+test("store role creation, scoped search, edit modal and manager isolation", async ({
+  page,
+}) => {
+  await page.goto("/roles.html");
+  await expect(page.locator("#sys-role-store")).toHaveValue("");
+  await page.getByRole("button", { name: "新增", exact: true }).click();
+  const create = page.getByRole("dialog", { name: "新增角色" });
+  await create.getByLabel("商店", { exact: true }).selectOption("edu");
+  await create.getByLabel("角色名稱", { exact: true }).fill("教育專案管理員");
+  await create.getByLabel("備註", { exact: true }).fill("教育角色");
+  await create.getByLabel("交易紀錄檢視", { exact: true }).check();
+  await page.screenshot({ path: "test-results/role-modal.png" });
+  await create.getByRole("button", { name: "確定", exact: true }).click();
+  await page.locator("#sys-role-store").selectOption("u");
+  await expect(
+    page.getByRole("row").filter({ hasText: "教育專案管理員" }),
+  ).toHaveCount(0);
+  await page.locator("#sys-role-store").selectOption("edu");
+  const row = page.getByRole("row").filter({ hasText: "教育專案管理員" });
+  await row.getByRole("button", { name: "編輯", exact: true }).click();
+  const edit = page.getByRole("dialog", { name: "編輯角色" });
+  await expect(edit.getByLabel("備註", { exact: true })).toHaveValue(
+    "教育角色",
+  );
+  await edit.getByLabel("角色名稱", { exact: true }).fill("教育自訂角色");
+  await edit.getByRole("button", { name: "確定", exact: true }).click();
+  await page.evaluate(() => {
+    const key = "payment-system-management-v2";
+    const saved = JSON.parse(localStorage.getItem(key));
+    saved.currentUserId = "big";
+    saved.store = "edu";
+    localStorage.setItem(key, JSON.stringify(saved));
+  });
+  await page.reload();
+  await expect(page.locator("#sys-role-store")).toHaveValue("edu");
+  await expect(
+    page.getByRole("row").filter({ hasText: "教育自訂角色" }),
+  ).toHaveCount(1);
+  await expect(
+    page.getByRole("row").filter({ hasText: "交易檢視角色" }),
+  ).toHaveCount(0);
 });

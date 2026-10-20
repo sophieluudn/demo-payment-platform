@@ -1,2 +1,153 @@
-body:has(.transaction-filter) main{container-type:inline-size}.transaction-filter{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:16px;row-gap:20px;padding:15px}.transaction-filter>.field{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}.transaction-filter>.field>span,.transaction-filter .field:nth-child(2)>span{width:100%;font-weight:600}.transaction-filter .field:nth-child(2){gap:8px}.transaction-filter>.field>input,.transaction-filter>.field>select{width:100%!important;min-width:0}.transaction-filter>.order-data-field{grid-column:span 2}.transaction-order-controls{display:flex;align-items:center;gap:12px;min-width:0}.transaction-order-controls>select{width:180px!important;min-width:0;flex:0 1 180px}.transaction-order-controls>input{width:auto!important;min-width:0;flex:1}.transaction-order-controls>.order-info{position:relative;display:inline-flex;align-items:center;justify-content:center;width:14px;flex:0 0 14px;font-weight:400}.transaction-search-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;grid-column:4;align-self:end}.transaction-search-actions>.btn{height:40px;min-height:40px;max-height:40px;padding-top:0;padding-bottom:0;display:inline-flex;align-items:center;justify-content:center}@container(max-width:940px){.transaction-filter{grid-template-columns:repeat(2,minmax(0,1fr))}.transaction-filter>.order-data-field{grid-column:span 2;grid-row:2}.transaction-search-actions{grid-column:2}}@container(max-width:480px){.transaction-filter{grid-template-columns:minmax(0,1fr)}.transaction-filter>.order-data-field{grid-column:1;grid-row:auto}.transaction-search-actions{grid-column:1}.transaction-order-controls{flex-wrap:wrap}.transaction-order-controls>select{flex:1;width:auto!important}.transaction-order-controls>input{flex:1 0 100%;width:100%!important}.transaction-order-controls .order-info-tooltip{right:-6px;left:auto;transform:none}.transaction-order-controls .order-info-tooltip::before{right:7px;left:auto}}
-.transaction-filter .field:nth-child(2)>span{width:100%}.transaction-filter .transaction-search-actions>.btn{box-sizing:border-box;height:40px;min-height:40px;max-height:40px;padding-top:0;padding-bottom:0;margin-top:0;margin-bottom:0;align-self:end}.transaction-filter .field:nth-child(2){gap:8px}@container(max-width:940px){.transaction-filter>.order-data-field{grid-row:auto}.transaction-search-actions{grid-column:2}}@container(max-width:480px){.transaction-search-actions{grid-column:1}}
+body:has(.transaction-filter) main {
+  container-type: inline-size;
+}
+.transaction-filter {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px 16px;
+  padding: 15px;
+}
+.transaction-filter > .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+.transaction-filter > .field > span,
+.transaction-filter .field:nth-child(2) > span {
+  width: 100%;
+  font-weight: 600;
+}
+.transaction-filter .field:nth-child(2) {
+  gap: 8px;
+}
+.transaction-filter > .field > input,
+.transaction-filter > .field > select {
+  width: 100% !important;
+  min-width: 0;
+}
+.transaction-filter > .order-data-field {
+  grid-column: span 2;
+}
+.transaction-order-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.transaction-order-controls > select {
+  width: 180px !important;
+  min-width: 0;
+  flex: 0 1 180px;
+}
+.transaction-order-controls > input {
+  width: auto !important;
+  min-width: 0;
+  flex: 1;
+}
+.transaction-order-controls > .order-info {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  flex: 0 0 14px;
+  font-weight: 400;
+}
+.transaction-search-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  grid-column: 4;
+  align-self: end;
+}
+.transaction-search-actions > .btn {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@container (max-width:940px) {
+  .transaction-filter {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .transaction-filter > .order-data-field {
+    grid-column: span 2;
+    grid-row: 2;
+  }
+  .transaction-search-actions {
+    grid-column: 2;
+  }
+}
+
+@container (max-width:480px) {
+  .transaction-filter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .transaction-filter > .order-data-field {
+    grid-column: 1;
+    grid-row: auto;
+  }
+  .transaction-search-actions {
+    grid-column: 1;
+  }
+  .transaction-order-controls {
+    flex-wrap: wrap;
+  }
+  .transaction-order-controls > select {
+    flex: 1;
+    width: auto !important;
+  }
+  .transaction-order-controls > input {
+    flex: 1 0 100%;
+    width: 100% !important;
+  }
+  .transaction-order-controls .order-info-tooltip {
+    right: -6px;
+    left: auto;
+    transform: none;
+  }
+  .transaction-order-controls .order-info-tooltip::before {
+    right: 7px;
+    left: auto;
+  }
+}
+.transaction-filter .field:nth-child(2) > span {
+  width: 100%;
+}
+.transaction-filter .transaction-search-actions > .btn {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  align-self: end;
+}
+.transaction-filter .field:nth-child(2) {
+  gap: 8px;
+}
+
+@container (max-width:940px) {
+  .transaction-filter > .order-data-field {
+    grid-row: auto;
+  }
+  .transaction-search-actions {
+    grid-column: 2;
+  }
+}
+
+@container (max-width:480px) {
+  .transaction-search-actions {
+    grid-column: 1;
+  }
+}

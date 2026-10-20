@@ -1,1 +1,117 @@
-body:has(.report-search-grid) main{container-type:inline-size}.filter.report-search-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:16px;row-gap:20px;align-items:end;padding:15px}.report-search-grid>.field{display:flex;flex-direction:column;align-items:stretch;gap:8px;min-width:0}.report-search-grid>.field>span,.statistics-filter.report-search-grid .field>span{width:auto;font-weight:600;white-space:nowrap}.report-search-grid>.field>input,.report-search-grid>.field>select{width:100%!important;min-width:0;box-sizing:border-box;height:40px;min-height:40px;max-height:40px}.statistics-filter.report-search-grid>.field:first-child,.report-search-grid>.report-format-field{grid-column:span 2}.report-format-options{display:flex;align-items:center;flex-wrap:wrap;gap:16px;min-height:40px}.report-format-options .radio{margin:0;white-space:nowrap}.statistics-filter.report-search-grid>.field:nth-last-of-type(1){grid-column:span 2}.report-search-actions{display:flex;align-items:center;justify-content:flex-end;gap:12px;grid-column:4}.report-search-grid .report-search-actions>.btn{height:40px;min-height:40px;max-height:40px;box-sizing:border-box;padding-top:0;padding-bottom:0;display:inline-flex;align-items:center;justify-content:center;margin:0}@container(max-width:940px){.filter.report-search-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.report-search-actions{grid-column:2}.statistics-filter.report-search-grid>.field:nth-last-of-type(1){grid-column:span 2}}@container(max-width:480px){.filter.report-search-grid{grid-template-columns:minmax(0,1fr)}.statistics-filter.report-search-grid>.field:first-child,.report-search-grid>.report-format-field,.statistics-filter.report-search-grid>.field:nth-last-of-type(1){grid-column:1}.report-search-actions{grid-column:1}.report-search-grid>.field{width:auto}.report-search-grid>.field>select{width:100%!important}}
+body:has(.report-search-grid) main {
+    container-type: inline-size
+}
+
+.filter.report-search-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px 16px;
+    align-items: end;
+    padding: 15px
+}
+
+.report-search-grid>.field {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0
+}
+
+.report-search-grid>.field>span,
+.statistics-filter.report-search-grid .field>span {
+    width: auto;
+    font-weight: 600;
+    white-space: nowrap
+}
+
+.report-search-grid>.field>input,
+.report-search-grid>.field>select {
+    width: 100% !important;
+    min-width: 0;
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px
+}
+
+.statistics-filter.report-search-grid>.field:first-child,
+.report-search-grid>.report-format-field {
+    grid-column: span 2
+}
+
+.report-format-options {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    min-height: 40px
+}
+
+.report-format-options .radio {
+    margin: 0;
+    white-space: nowrap
+}
+
+.statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
+    grid-column: span 2
+}
+
+.report-search-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    grid-column: 4
+}
+
+.report-search-grid .report-search-actions>.btn {
+    height: 40px;
+    min-height: 40px;
+    max-height: 40px;
+    box-sizing: border-box;
+    padding-top: 0;
+    padding-bottom: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0
+}
+
+@container(max-width:940px) {
+    .filter.report-search-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+
+    .report-search-actions {
+        grid-column: 2
+    }
+
+    .statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
+        grid-column: span 2
+    }
+}
+
+@container(max-width:480px) {
+    .filter.report-search-grid {
+        grid-template-columns: minmax(0, 1fr)
+    }
+
+    .statistics-filter.report-search-grid>.field:first-child,
+    .report-search-grid>.report-format-field,
+    .statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
+        grid-column: 1
+    }
+
+    .report-search-actions {
+        grid-column: 1
+    }
+
+    .report-search-grid>.field {
+        width: auto
+    }
+
+    .report-search-grid>.field>select {
+        width: 100% !important
+    }
+}

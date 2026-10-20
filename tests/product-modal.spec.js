@@ -1,94 +1,133 @@
-const {test,expect}=require('@playwright/test');
-test('unpublished product deletion requires confirmation and persists',async({page})=>{
- await page.goto('/products.html');
- const row=page.locator('.product-table tbody tr').filter({hasText:'[測試] 未上架商品'});
- await expect(row.getByRole('button',{name:'刪除',exact:true})).toBeEnabled();
- await expect(page.locator('.product-table tbody tr').filter({hasText:'687'}).getByRole('button',{name:'刪除',exact:true})).toBeDisabled();
- await row.getByRole('button',{name:'刪除',exact:true}).click();
- const modal=page.getByRole('dialog',{name:'是否要刪除?'});
- await modal.getByRole('button',{name:'取消',exact:true}).click();
- await expect(row).toHaveCount(1);
- await row.getByRole('button',{name:'刪除',exact:true}).click();
- await page.keyboard.press('Escape');
- await expect(row).toHaveCount(1);
- await row.getByRole('button',{name:'刪除',exact:true}).click();
- await page.screenshot({path:'test-results/product-delete-confirm.png'});
- await modal.getByRole('button',{name:'確定',exact:true}).click();
- await expect(row).toHaveCount(0);
- await expect(page.locator('.pager')).toContainText('共 83 項');
- await page.reload();await expect(row).toHaveCount(0);
+const { test, expect } = require("@playwright/test");
+test("unpublished product deletion requires confirmation and persists", async ({
+  page,
+}) => {
+  await page.goto("/products.html");
+  const row = page
+    .locator(".product-table tbody tr")
+    .filter({ hasText: "[測試] 未上架商品" });
+  await expect(
+    row.getByRole("button", { name: "刪除", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page
+      .locator(".product-table tbody tr")
+      .filter({ hasText: "687" })
+      .getByRole("button", { name: "刪除", exact: true }),
+  ).toBeDisabled();
+  await row.getByRole("button", { name: "刪除", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "是否要刪除?" });
+  await modal.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(row).toHaveCount(1);
+  await row.getByRole("button", { name: "刪除", exact: true }).click();
+  await page.keyboard.press("Escape");
+  await expect(row).toHaveCount(1);
+  await row.getByRole("button", { name: "刪除", exact: true }).click();
+  await page.screenshot({ path: "test-results/product-delete-confirm.png" });
+  await modal.getByRole("button", { name: "確定", exact: true }).click();
+  await expect(row).toHaveCount(0);
+  await expect(page.locator(".pager")).toContainText("共 83 項");
+  await page.reload();
+  await expect(row).toHaveCount(0);
 });
-test('new product modal validates and adds a product',async({page})=>{
- await page.goto('/products.html');
- await page.getByRole('button',{name:'新增',exact:true}).click();
- const modal=page.getByRole('dialog',{name:'新增商品'});
- await expect(modal).toBeVisible();
- const save=modal.getByRole('button',{name:'確定',exact:true});
- await expect(save).toBeDisabled();
- await modal.getByLabel('專案',{exact:true}).selectOption('行動發展部');
- await modal.getByLabel('商品名稱',{exact:true}).fill('新增測試商品');
- await modal.getByLabel('價格',{exact:true}).fill('250');
- await modal.getByLabel('上架開始日期',{exact:true}).focus();
- await modal.getByLabel('上架開始日期',{exact:true}).fill('2026-10-14T12:00');
- await modal.getByLabel('上架結束日期',{exact:true}).focus();
- await modal.getByLabel('上架結束日期',{exact:true}).fill('2026-10-13T12:00');
- await expect(save).toBeDisabled();
- await expect(modal.getByRole('alert')).toContainText('上架結束日期須晚於開始日期');
- await modal.getByRole('button',{name:'不限',exact:true}).click();
- await expect(modal.getByLabel('上架結束日期',{exact:true})).toHaveValue('2999-12-31 23:59:59');
- await expect(save).toBeEnabled();
- await page.screenshot({path:'test-results/new-product-desktop.png',fullPage:true});
- await save.click();
- await expect(modal).not.toBeVisible();
- await expect(page.locator('.product-table tbody tr').first()).toContainText('新增測試商品');
- await expect(page.locator('.product-table tbody tr').first()).toContainText('2999-12-31');
- await page.reload();
- await expect(page.locator('.product-table tbody tr').first()).toContainText('新增測試商品');
+test("new product modal validates and adds a product", async ({ page }) => {
+  await page.goto("/products.html");
+  await page.getByRole("button", { name: "新增", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "新增商品" });
+  await expect(modal).toBeVisible();
+  const save = modal.getByRole("button", { name: "確定", exact: true });
+  await expect(save).toBeDisabled();
+  await modal.getByLabel("專案", { exact: true }).selectOption("行動發展部");
+  await modal.getByLabel("商品名稱", { exact: true }).fill("新增測試商品");
+  await modal.getByLabel("價格", { exact: true }).fill("250");
+  await modal.getByLabel("上架開始日期", { exact: true }).focus();
+  await modal
+    .getByLabel("上架開始日期", { exact: true })
+    .fill("2026-10-14T12:00");
+  await modal.getByLabel("上架結束日期", { exact: true }).focus();
+  await modal
+    .getByLabel("上架結束日期", { exact: true })
+    .fill("2026-10-13T12:00");
+  await expect(save).toBeDisabled();
+  await expect(modal.getByRole("alert")).toContainText(
+    "上架結束日期須晚於開始日期",
+  );
+  await modal.getByRole("button", { name: "不限", exact: true }).click();
+  await expect(modal.getByLabel("上架結束日期", { exact: true })).toHaveValue(
+    "2999-12-31 23:59:59",
+  );
+  await expect(save).toBeEnabled();
+  await page.screenshot({
+    path: "test-results/new-product-desktop.png",
+    fullPage: true,
+  });
+  await save.click();
+  await expect(modal).not.toBeVisible();
+  await expect(page.locator(".product-table tbody tr").first()).toContainText(
+    "新增測試商品",
+  );
+  await expect(page.locator(".product-table tbody tr").first()).toContainText(
+    "2999-12-31",
+  );
+  await page.reload();
+  await expect(page.locator(".product-table tbody tr").first()).toContainText(
+    "新增測試商品",
+  );
 });
 
-test('date picker and editing launched product',async({page})=>{
- await page.goto('/products.html');
- await page.getByRole('button',{name:'新增',exact:true}).click();
- const modal=page.getByRole('dialog',{name:'新增商品',exact:true});
- await modal.getByLabel('上架開始日期',{exact:true}).click();
- const picker=page.getByRole('dialog',{name:'選擇日期與時間'});
- await expect(picker).toBeVisible();
- await page.screenshot({path:'test-results/product-date-picker.png'});
- await picker.getByLabel('選擇日期',{exact:true}).fill('2026-10-20');
- await picker.getByLabel('選擇時間',{exact:true}).fill('15:30:45');
- await picker.getByRole('button',{name:'確認',exact:true}).click();
- await expect(modal.getByLabel('上架開始日期',{exact:true})).toHaveValue('2026-10-20 15:30:45');
- await expect(picker).not.toBeVisible();
- await modal.getByRole('button',{name:'取消',exact:true}).click();
- const row=page.locator('.product-table tbody tr').filter({hasText:'687'});
- const originalPrice=await row.locator('td').nth(4).textContent();
- const originalStart=await row.locator('td').nth(6).textContent();
- await row.getByRole('button',{name:'編輯',exact:true}).click();
- const edit=page.getByRole('dialog',{name:'編輯商品',exact:true});
- await expect(edit.getByLabel('價格',{exact:true})).toBeDisabled();
- await expect(edit.getByLabel('上架開始日期',{exact:true})).toBeDisabled();
- await page.screenshot({path:'test-results/product-edit.png'});
- await edit.getByLabel('商品名稱',{exact:true}).fill('修改已上架商品');
- await edit.getByRole('button',{name:'確定',exact:true}).click();
- await expect(row).toContainText('修改已上架商品');
- await expect(row.locator('td').nth(4)).toHaveText(originalPrice);
- await expect(row.locator('td').nth(6)).toHaveText(originalStart);
- await page.reload();
- await expect(page.locator('.product-table tbody tr').filter({hasText:'687'})).toContainText('修改已上架商品');
+test("date picker and editing launched product", async ({ page }) => {
+  await page.goto("/products.html");
+  await page.getByRole("button", { name: "新增", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "新增商品", exact: true });
+  await modal.getByLabel("上架開始日期", { exact: true }).click();
+  const picker = page.getByRole("dialog", { name: "選擇日期與時間" });
+  await expect(picker).toBeVisible();
+  await page.screenshot({ path: "test-results/product-date-picker.png" });
+  await picker.getByLabel("選擇日期", { exact: true }).fill("2026-10-20");
+  await picker.getByLabel("選擇時間", { exact: true }).fill("15:30:45");
+  await picker.getByRole("button", { name: "確定", exact: true }).click();
+  await expect(modal.getByLabel("上架開始日期", { exact: true })).toHaveValue(
+    "2026-10-20 15:30:45",
+  );
+  await expect(picker).not.toBeVisible();
+  await modal.getByRole("button", { name: "取消", exact: true }).click();
+  const row = page
+    .locator(".product-table tbody tr")
+    .filter({ hasText: "687" });
+  const originalPrice = await row.locator("td").nth(4).textContent();
+  const originalStart = await row.locator("td").nth(6).textContent();
+  await row.getByRole("button", { name: "編輯", exact: true }).click();
+  const edit = page.getByRole("dialog", { name: "編輯商品", exact: true });
+  await expect(edit.getByLabel("價格", { exact: true })).toBeDisabled();
+  await expect(edit.getByLabel("上架開始日期", { exact: true })).toBeDisabled();
+  await page.screenshot({ path: "test-results/product-edit.png" });
+  await edit.getByLabel("商品名稱", { exact: true }).fill("修改已上架商品");
+  await edit.getByRole("button", { name: "確定", exact: true }).click();
+  await expect(row).toContainText("修改已上架商品");
+  await expect(row.locator("td").nth(4)).toHaveText(originalPrice);
+  await expect(row.locator("td").nth(6)).toHaveText(originalStart);
+  await page.reload();
+  await expect(
+    page.locator(".product-table tbody tr").filter({ hasText: "687" }),
+  ).toContainText("修改已上架商品");
 });
-test('mobile product modal closes and resets draft',async({page})=>{
- await page.setViewportSize({width:390,height:844});
- await page.goto('/products.html');
- await page.getByRole('button',{name:'新增',exact:true}).click();
- const modal=page.getByRole('dialog',{name:'新增商品'});
- await modal.getByLabel('商品名稱',{exact:true}).fill('未儲存');
- await page.screenshot({path:'test-results/new-product-mobile.png',fullPage:true});
- const bounds=await modal.boundingBox();
- expect(bounds.x).toBeGreaterThanOrEqual(0); expect(bounds.x+bounds.width).toBeLessThanOrEqual(390);
- await page.keyboard.press('Escape');
- await expect(modal).not.toBeVisible();
- await page.getByRole('button',{name:'新增',exact:true}).click();
- await expect(modal.getByLabel('商品名稱',{exact:true})).toHaveValue('');
- await modal.getByRole('button',{name:'取消',exact:true}).click();
- await expect(modal).not.toBeVisible();
+test("mobile product modal closes and resets draft", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/products.html");
+  await page.getByRole("button", { name: "新增", exact: true }).click();
+  const modal = page.getByRole("dialog", { name: "新增商品" });
+  await modal.getByLabel("商品名稱", { exact: true }).fill("未儲存");
+  await page.screenshot({
+    path: "test-results/new-product-mobile.png",
+    fullPage: true,
+  });
+  const bounds = await modal.boundingBox();
+  expect(bounds.x).toBeGreaterThanOrEqual(0);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(390);
+  await page.keyboard.press("Escape");
+  await expect(modal).not.toBeVisible();
+  await page.getByRole("button", { name: "新增", exact: true }).click();
+  await expect(modal.getByLabel("商品名稱", { exact: true })).toHaveValue("");
+  await modal.getByRole("button", { name: "取消", exact: true }).click();
+  await expect(modal).not.toBeVisible();
 });

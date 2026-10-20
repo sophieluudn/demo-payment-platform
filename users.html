@@ -1,1 +1,147 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>使用者管理｜行動支付支援平台</title><link rel="stylesheet" href="style.css?v=buttons-text-icon-4"><link rel="stylesheet" href="system-admin.css?v=users-search-grid-2"><script defer src="system-model.js"></script><script defer src="user-create-modal.js"></script><script defer src="system-admin.js"></script><link rel="stylesheet" href="user-create-modal.css"></head><body><aside><a class="nav-main " href="index.html"><img class="icon" src="assets/house.svg" alt="">首頁</a><details open><summary><img class="icon" src="assets/file-text.svg" alt="">交易管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="transactions.html">所有交易紀錄</a></div></details><details open><summary><img class="icon" src="assets/bag.svg" alt="">商品管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="products.html">商品管理</a><a class="" href="tags.html">標籤管理</a></div></details><details open><summary><img class="icon" src="assets/briefcase.svg" alt="">統計報表<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="statistics.html">商品交易統計</a><a class="" href="statements.html">對帳單</a></div></details><details open><summary><img class="icon" src="assets/gear.svg" alt="">系統管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="active" href="users.html">使用者管理</a><a class="" href="roles.html">角色管理</a><a class="" href="projects.html">專案管理</a><a class="" href="stores.html">商店管理</a><a class="" href="payments.html">支付工具設定</a></div></details></aside><div class="shell"><header><label for="collapse" class="menu-toggle" title="收合側邊選單"><img class="icon" src="assets/list.svg" alt=""></label><div class="breadcrumb"><a href="index.html">首頁</a><span>/</span>系統管理<span>/</span><span>使用者管理</span></div><div class="account"><a class="version" href="#">v1.4.2</a><a class="reset" href="users.html">清除</a><span class="clock">12:56</span><span class="avatar">S</span><img class="icon" src="assets/chevron-down.svg" alt=""></div></header><main><button type="button" class="btn success">新增</button><div class="pager">共 0 項<img class="icon" src="assets/chevron-left.svg" alt=""><a class="active" href="#">1</a><img class="icon" src="assets/chevron-right.svg" alt=""></div><div class="table-wrap "><table><thead><tr><th>姓名</th><th>使用者帳號</th><th>商店</th><th>角色</th><th>狀態(啟用/不啟用)</th><th>功能</th></tr></thead><tbody><tr><td class="empty" colspan="6">暫無資料</td></tr></tbody></table></div></main></div><input class="collapse-control" type="checkbox" id="collapse"></body></html>
+<!doctype html>
+
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>使用者管理｜行動支付支援平台</title>
+
+    <!-- 樣式（載入順序會影響 CSS 覆寫，請勿隨意調換） -->
+    <link rel="stylesheet" href="style.css?v=buttons-text-icon-4" />
+    <link rel="stylesheet" href="system-admin.css?v=restore-20261015" />
+    <link rel="stylesheet" href="user-create-modal.css?v=restore-20261015" />
+    <link rel="stylesheet" href="ui/dist/element-app.css" />
+
+    <!-- 腳本（defer：頁面解析完成後，依下列順序執行） -->
+    <script defer src="system-model.js?v=modal-confirm-20261015"></script>
+    <script defer src="user-create-modal.js?v=modal-confirm-20261015"></script>
+    <script defer src="system-admin.js?v=modal-confirm-20261015"></script>
+    <script defer src="ui/dist/element-app.js"></script>
+  </head>
+
+  <body>
+    <!-- ───────────── 側邊選單 ───────────── -->
+    <aside>
+      <a class="nav-main" href="index.html">
+        <img class="icon" src="assets/house.svg" alt="" />
+        首頁
+      </a>
+
+      <!-- 交易管理 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/file-text.svg" alt="" />
+          交易管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a href="transactions.html">所有交易紀錄</a>
+        </div>
+      </details>
+
+      <!-- 商品管理 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/bag.svg" alt="" />
+          商品管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a href="products.html">商品管理</a>
+          <a href="tags.html">標籤管理</a>
+        </div>
+      </details>
+
+      <!-- 統計報表 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/briefcase.svg" alt="" />
+          統計報表
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a href="statistics.html">商品交易統計</a>
+          <a href="statements.html">對帳單</a>
+        </div>
+      </details>
+
+      <!-- 系統管理（目前頁面：使用者管理） -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/gear.svg" alt="" />
+          系統管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="active" href="users.html">使用者管理</a>
+          <a href="roles.html">角色管理</a>
+          <a href="projects.html">專案管理</a>
+          <a href="stores.html">商店管理</a>
+          <a href="payments.html">支付工具設定</a>
+        </div>
+      </details>
+    </aside>
+
+    <div class="shell">
+      <!-- ───────────── 頁首 ───────────── -->
+      <header>
+        <label for="collapse" class="menu-toggle" title="收合側邊選單">
+          <img class="icon" src="assets/list.svg" alt="" />
+        </label>
+
+        <div class="breadcrumb">
+          <a href="index.html">首頁</a>
+          <span>/</span>
+          <a href="system.html">系統管理</a>
+          <span>/</span>
+          <span>使用者管理</span>
+        </div>
+
+        <div class="account">
+          <a class="version" href="#">v1.4.2</a>
+          <a class="reset" title="重新取得權限 token" href="users.html">重置</a>
+          <span class="clock">12:56</span>
+          <span class="avatar">S</span>
+          <img class="icon" src="assets/chevron-down.svg" alt="" />
+        </div>
+      </header>
+
+      <!-- ───────────── 主要內容 ───────────── -->
+      <main>
+        <button type="button" class="btn success">新增</button>
+
+        <!-- 分頁資訊：「共 N 項」文字需保持是 .pager 的第一個子節點（tags.js 這類腳本會直接改寫它） -->
+        <div class="pager">
+          共 0 項
+          <img class="icon" src="assets/chevron-left.svg" alt="" />
+          <a class="active" href="#">1</a>
+          <img class="icon" src="assets/chevron-right.svg" alt="" />
+        </div>
+
+        <!-- 使用者列表（目前為空狀態） -->
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>姓名</th>
+                <th>使用者帳號</th>
+                <th>商店</th>
+                <th>角色</th>
+                <th>狀態(啟用/不啟用)</th>
+                <th>功能</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="empty" colspan="6">暫無資料</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- 側邊選單收合開關（頁首的 menu-toggle 以 label 控制它） -->
+    <input class="collapse-control" type="checkbox" id="collapse" />
+  </body>
+</html>

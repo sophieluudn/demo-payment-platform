@@ -1,1 +1,176 @@
-<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>標籤管理｜行動支付支援平台</title><link rel="stylesheet" href="style.css?v=buttons-text-icon-4"><link rel="stylesheet" href="tags.css?v=grid-search-6"></head><body><aside><a class="nav-main " href="index.html"><img class="icon" src="assets/house.svg" alt="">首頁</a><details open><summary><img class="icon" src="assets/file-text.svg" alt="">交易管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="transactions.html">所有交易紀錄</a></div></details><details open><summary><img class="icon" src="assets/bag.svg" alt="">商品管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="products.html">商品管理</a><a class="active" href="tags.html">標籤管理</a></div></details><details ><summary><img class="icon" src="assets/briefcase.svg" alt="">統計報表<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="statistics.html">商品交易統計</a><a class="" href="statements.html">對帳單</a></div></details><details ><summary><img class="icon" src="assets/gear.svg" alt="">系統管理<img class="icon" src="assets/chevron-up.svg" alt=""></summary><div class="submenu"><a class="" href="users.html">使用者管理</a><a class="" href="roles.html">角色管理</a><a class="" href="projects.html">專案管理</a><a class="" href="stores.html">商店管理</a><a class="" href="payments.html">支付工具設定</a></div></details></aside><div class="shell"><header><label for="collapse" class="menu-toggle" title="收合側邊選單"><img class="icon" src="assets/list.svg" alt=""></label><div class="breadcrumb"><a href="index.html">首頁</a><span>/</span>商品管理<span>/</span><span>標籤管理</span></div><div class="account"><a class="version" href="#">v1.4.2</a><a class="reset" href="tags.html">清除</a><span class="clock">12:56</span><span class="avatar">S</span><img class="icon" src="assets/chevron-down.svg" alt=""></div></header><main><form class="filter tag-search" id="tag-search-form"><div class="tag-search-field"><label for="tag-search-name">標籤名稱</label><input id="tag-search-name" aria-label="請輸入標籤名稱" placeholder="請輸入標籤名稱"></div><div class="tag-search-actions"><button type="submit" class="btn primary">搜尋</button><button type="button" class="btn plain" id="tag-search-reset">清除</button></div></form><div class="tag-list-toolbar"><button type="button" class="btn success" id="tag-add">新增</button><label class="tag-sort-label">排序<select aria-label="日期排序"><option selected>日期由近到遠</option><option>日期由遠到近</option></select></label></div><div class="pager">共 7 項<select aria-label="50項/頁" style="width:100px"><option>50項/頁</option><option>全部</option><option>行動發展部</option></select><img class="icon" src="assets/chevron-left.svg" alt=""><a class="active" href="#">1</a><img class="icon" src="assets/chevron-right.svg" alt=""></div><div class="table-wrap "><table><thead><tr><th>標籤名稱</th><th>標籤說明</th><th>功能</th></tr></thead><tbody><tr><td>免稅商品</td><td>免稅商品</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>活動報名平台</td><td>Test</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>【塩田千春：顫動的靈魂】舞台作品個展</td><td>活動名稱</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>【蜷川實花攝影展】鏡頭下百花絢爛的繽紛世界</td><td>活動名稱</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>測試</td><td>測試用標籤</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>早鳥票</td><td>早起的鳥兒有蟲吃</td><td><button type="button" class="btn primary">編輯</button></td></tr><tr><td>村上春樹</td><td>村上春樹</td><td><button type="button" class="btn primary">編輯</button></td></tr></tbody></table></div></main></div><input class="collapse-control" type="checkbox" id="collapse"><script src="tags.js"></script></body></html>
+<!doctype html>
+<html lang="zh-Hant">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>標籤管理｜行動支付支援平台</title>
+        <link rel="stylesheet" href="style.css?v=buttons-text-icon-4">
+        <link rel="stylesheet" href="tags.css?v=grid-search-6">
+        <link rel="stylesheet" href="ui/dist/element-app.css">
+        <script defer src="ui/dist/element-app.js"></script>
+    </head>
+    <body>
+        <aside>
+            <a class="nav-main " href="index.html">
+                <img class="icon" src="assets/house.svg" alt="">首頁
+            </a>
+            <details open>
+                <summary>
+                    <img class="icon" src="assets/file-text.svg" alt="">交易管理
+                    <img class="icon" src="assets/chevron-up.svg" alt="">
+                </summary>
+                <div class="submenu">
+                    <a class="" href="transactions.html">所有交易紀錄</a>
+                </div>
+            </details>
+            <details open>
+                <summary>
+                    <img class="icon" src="assets/bag.svg" alt="">商品管理
+                    <img class="icon" src="assets/chevron-up.svg" alt="">
+                </summary>
+                <div class="submenu">
+                    <a class="" href="products.html">商品管理</a>
+                    <a class="active" href="tags.html">標籤管理</a>
+                </div>
+            </details>
+            <details>
+                <summary>
+                    <img class="icon" src="assets/briefcase.svg" alt="">統計報表
+                    <img class="icon" src="assets/chevron-up.svg" alt="">
+                </summary>
+                <div class="submenu">
+                    <a class="" href="statistics.html">商品交易統計</a>
+                    <a class="" href="statements.html">對帳單</a>
+                </div>
+            </details>
+            <details>
+                <summary>
+                    <img class="icon" src="assets/gear.svg" alt="">系統管理
+                    <img class="icon" src="assets/chevron-up.svg" alt="">
+                </summary>
+                <div class="submenu">
+                    <a class="" href="users.html">使用者管理</a>
+                    <a class="" href="roles.html">角色管理</a>
+                    <a class="" href="projects.html">專案管理</a>
+                    <a class="" href="stores.html">商店管理</a>
+                    <a class="" href="payments.html">支付工具設定</a>
+                </div>
+            </details>
+        </aside>
+        <div class="shell">
+            <header>
+                <label for="collapse" class="menu-toggle" title="收合側邊選單">
+                    <img class="icon" src="assets/list.svg" alt="">
+                </label>
+                <div class="breadcrumb">
+                    <a href="index.html">首頁</a>
+                    <span>/</span>商品管理
+                    <span>/</span>
+                    <span>標籤管理</span>
+                </div>
+                <div class="account">
+                    <a class="version" href="#">v1.4.2</a>
+                    <a class="reset" title="重新取得權限 token" href="tags.html">重置</a>
+                    <span class="clock">12:56</span>
+                    <span class="avatar">S</span>
+                    <img class="icon" src="assets/chevron-down.svg" alt="">
+                </div>
+            </header>
+            <main>
+                <form class="filter tag-search" id="tag-search-form">
+                    <div class="tag-search-field">
+                        <label for="tag-search-name">標籤名稱</label>
+                        <input id="tag-search-name" aria-label="請輸入標籤名稱" placeholder="請輸入標籤名稱">
+                    </div>
+                    <div class="tag-search-actions">
+                        <button type="submit" class="btn primary">搜尋</button>
+                        <button type="button" class="btn plain" id="tag-search-reset">清除</button>
+                    </div>
+                </form>
+                <div class="tag-list-toolbar">
+                    <button type="button" class="btn success" id="tag-add">新增</button>
+                    <label class="tag-sort-label">排序
+                        <select aria-label="日期排序">
+                            <option selected>日期由近到遠</option>
+                            <option>日期由遠到近</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="pager">共 7 項
+                    <select aria-label="50項/頁" style="width:100px">
+                        <option>50項/頁</option>
+                        <option>全部</option>
+                        <option>行動發展部</option>
+                    </select>
+                    <img class="icon" src="assets/chevron-left.svg" alt="">
+                    <a class="active" href="#">1</a>
+                    <img class="icon" src="assets/chevron-right.svg" alt="">
+                </div>
+                <div class="table-wrap ">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>標籤名稱</th>
+                                <th>標籤說明</th>
+                                <th>功能</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>免稅商品</td>
+                                <td>免稅商品</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>活動報名平台</td>
+                                <td>Test</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>【塩田千春：顫動的靈魂】舞台作品個展</td>
+                                <td>活動名稱</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>【蜷川實花攝影展】鏡頭下百花絢爛的繽紛世界</td>
+                                <td>活動名稱</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>測試</td>
+                                <td>測試用標籤</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>早鳥票</td>
+                                <td>早起的鳥兒有蟲吃</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>村上春樹</td>
+                                <td>村上春樹</td>
+                                <td>
+                                    <button type="button" class="btn primary">編輯</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+        <input class="collapse-control" type="checkbox" id="collapse">
+        <script src="tags.js?v=modal-confirm-20261015"></script>
+    </body>
+</html>

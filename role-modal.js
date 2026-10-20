@@ -1,14 +1,21 @@
-window.openRoleModal = config => {
-  document.querySelector('.role-modal')?.remove();
-  const dialog = document.createElement('dialog');
-  dialog.className = 'role-modal';
-  dialog.setAttribute('aria-labelledby', 'role-modal-title');
+window.openRoleModal = (config) => {
+  // ───────────────────────── 1. 建立 Dialog 彈窗 ─────────────────────────
+  document.querySelector(".role-modal")?.remove();
 
-  const editing = !!config.role?.id;
+  const dialog = document.createElement("dialog");
+  dialog.className = "role-modal";
+  dialog.setAttribute("aria-labelledby", "role-modal-title");
+
+  const isEditing = !!config.role?.id;
+  const selection = structuredClone(config.role?.permissions || {});
+  const displayActions = Object.fromEntries(Object.entries(config.actions).map(([feature, actions]) => [
+    feature, actions.filter(action => action !== "edit").map(action => action === "create" ? "createEdit" : action),
+  ]));
+  const underlyingActions = action => action === "createEdit" ? ["create", "edit"] : [action];
 
   dialog.innerHTML = `
     <div class="role-modal-heading">
-      <h2 id="role-modal-title">${editing ? '編輯角色' : '新增角色'}</h2>
+      <h2 id="role-modal-title">${isEditing ? "編輯角色" : "新增角色"}</h2>
       <button type="button" class="role-close" aria-label="關閉角色視窗">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor">
           <path d="m3 3 10 10M13 3 3 13"/>
@@ -20,13 +27,13 @@ window.openRoleModal = config => {
         <div class="role-setting-row">
           <span class="role-setting-label">狀態</span>
           <div class="role-status-controls">
-            <button type="button" class="role-status-switch" role="switch" aria-label="角色狀態" aria-checked="true"></button>
-            <input type="checkbox" name="enabled" checked hidden>
+            <button type="button" class="role-status-switch" role="switch" aria-label="角色狀態"></button>
+            <input type="checkbox" name="enabled" hidden>
           </div>
         </div>
         <label>
-          <span class="role-setting-label">商店</span>
-          <select name="scope" aria-label="商店" required></select>
+          <span class="role-setting-label required">商店</span>
+          <select name="scope" aria-label="商店"></select>
         </label>
         <label>
           <span class="role-setting-label">角色名稱</span>
@@ -39,6 +46,7 @@ window.openRoleModal = config => {
         <div class="role-setting-row role-permissions-row">
           <span class="role-setting-label">功能權限</span>
           <div class="role-permission-grid">
+            <p class="role-permission-help">依側邊選單設定功能權限；灰色項目表示您無法授予此權限。商店及專案的資料範圍沿用使用者授權。</p>
             <table class="role-permission-table">
               <thead>
                 <tr><th>功能</th><th>操作權限</th></tr>
@@ -51,121 +59,181 @@ window.openRoleModal = config => {
       <p class="role-error" role="alert" hidden></p>
       <div class="role-modal-actions">
         <button type="button" class="btn plain role-cancel">取消</button>
-        <button type="submit" class="btn primary">儲存</button>
+        <button type="submit" class="btn primary">確定</button>
       </div>
     </form>
   `;
 
   document.body.append(dialog);
 
-  const form = dialog.querySelector('form');
-  const stores = form.elements.scope;
+  // ───────────────────────── 2. 表單與預設值初始化 ─────────────────────────
+  const form = dialog.querySelector("form");
+  const storeSelect = form.elements.scope;
+  const statusBtn = dialog.querySelector(".role-status-switch");
+  const enabledCheckbox = form.elements.enabled;
+  const errorAlert = dialog.querySelector(".role-error");
 
-  config.stores.forEach(store => stores.add(new Option(store.name, store.id)));
-  if (editing && !config.role.store) stores.add(new Option('系統共用角色', ''));
-  stores.value = editing ? config.role.store : config.defaultStore || config.stores[0]?.id || '';
-  if (editing && !config.role.store) stores.required = false;
-  stores.disabled = editing;
+  // 填入商店選單
+  config.stores.forEach((store) =>
+    storeSelect.add(new Option(store.name, store.id))
+  );
+  storeSelect.value = isEditing
+    ? (config.role.store ?? "")
+    : (config.defaultStore ?? config.stores[0]?.id ?? "");
 
-  form.elements.name.value = config.role?.name || '';
-  form.elements.note.value = config.role?.note || '';
-  form.elements.enabled.checked = config.role?.enabled !== false;
+  // 填入基本欄位
+  form.elements.name.value = config.role?.name || "";
+  form.elements.note.value = config.role?.note || "";
+  enabledCheckbox.checked = config.role?.enabled !== false;
 
-  const status = dialog.querySelector('.role-status-switch');
-  status.setAttribute('aria-checked', String(form.elements.enabled.checked));
-  status.addEventListener('click', () => {
-    form.elements.enabled.checked = !form.elements.enabled.checked;
-    status.setAttribute('aria-checked', String(form.elements.enabled.checked));
+  // 綁定開關按鈕狀態
+  const updateStatusSwitch = () => {
+    statusBtn.setAttribute("aria-checked", String(enabledCheckbox.checked));
+  };
+  updateStatusSwitch();
+
+  statusBtn.addEventListener("click", () => {
+    enabledCheckbox.checked = !enabledCheckbox.checked;
+    updateStatusSwitch();
   });
 
-  const render = () => {
-    const grid = dialog.querySelector('.role-permission-table tbody');
-    grid.replaceChildren();
+  // ───────────────────────── 3. 權限表格渲染邏輯 ─────────────────────────
+  const renderPermissionRow = ([feature, actions]) => {
+    const row = document.createElement("tr");
 
-    Object.entries(config.actions).forEach(([feature, valid]) => {
-      const row = document.createElement('tr');
-      const title = document.createElement('th');
-      title.scope = 'row';
-      title.textContent = config.labels[feature];
-      const cell = document.createElement('td');
-      const section = document.createElement('div');
-      section.className = 'role-permission-options';
-      cell.append(section);
-      row.append(title, cell);
+    // 表格標題（功能名稱）
+    const th = document.createElement("th");
+    th.scope = "row";
+    th.textContent = config.labels[feature];
 
-      const allLabel = document.createElement('label');
-      allLabel.className = 'role-group-toggle';
-      const all = document.createElement('input');
-      all.type = 'checkbox';
-      all.dataset.group = feature;
-      all.setAttribute('aria-label', config.labels[feature] + '整組勾選');
-      allLabel.append(all, document.createTextNode('全選'));
-      section.append(allLabel);
+    const td = document.createElement("td");
+    const container = document.createElement("div");
+    container.className = "role-permission-options";
+    td.append(container);
+    row.append(th, td);
 
-      const inputs = [];
-      valid.forEach(action => {
-        const label = document.createElement('label');
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.name = feature + ':' + action;
-        input.checked = config.role?.permissions?.[feature]?.includes(action) || false;
-        input.disabled = !config.allowed(stores.value, feature, action);
-        input.dataset.permission = feature;
-        input.setAttribute('aria-label', config.labels[feature] + config.labels[action]);
-        label.append(input, document.createTextNode(config.labels[action]));
-        section.append(label);
-        inputs.push(input);
-      });
+    // 「全選」 Checkbox
+    const groupLabel = document.createElement("label");
+    groupLabel.className = "role-group-toggle";
+    const groupCheckbox = document.createElement("input");
+    groupCheckbox.type = "checkbox";
+    groupCheckbox.dataset.group = feature;
+    groupCheckbox.setAttribute("aria-label", `${config.labels[feature]}整組勾選`);
+    groupLabel.append(groupCheckbox, document.createTextNode("全選"));
+    if (actions.length > 1) container.append(groupLabel);
 
-      const sync = () => {
-        const enabled = inputs.filter(input => !input.disabled);
-        all.disabled = !enabled.length;
-        all.checked = enabled.length > 0 && enabled.every(input => input.checked);
-        all.indeterminate = enabled.some(input => input.checked) && !all.checked;
-      };
+    // 子項操作 Checkbox 列表
+    const actionInputs = actions.map((action) => {
+      const label = document.createElement("label");
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = `${feature}:${action}`;
+      input.checked = underlyingActions(action).some(value => selection[feature]?.includes(value));
+      input.disabled = !underlyingActions(action).every(value => config.allowed(storeSelect.value, feature, value));
+      input.dataset.permission = feature;
+      input.setAttribute("aria-label", config.labels[feature] + config.labels[action]);
 
-      inputs.forEach(input => input.addEventListener('change', sync));
-      all.addEventListener('change', () => {
-        inputs.filter(input => !input.disabled).forEach(input => (input.checked = all.checked));
-        sync();
-      });
-      sync();
-      grid.append(row);
+      label.append(input, document.createTextNode(config.labels[action]));
+      container.append(label);
+      return input;
     });
+
+    // 全選與子項狀態同步
+    const syncGroupState = () => {
+      const activeInputs = actionInputs.filter((input) => !input.disabled);
+      const checkedCount = activeInputs.filter((input) => input.checked).length;
+
+      groupCheckbox.disabled = activeInputs.length === 0;
+      groupCheckbox.checked = activeInputs.length > 0 && checkedCount === activeInputs.length;
+      groupCheckbox.indeterminate = checkedCount > 0 && checkedCount < activeInputs.length;
+    };
+
+    // 事件連動監聽
+    const remember = () => {
+      selection[feature] = actions.filter((action, index) => actionInputs[index].checked && !actionInputs[index].disabled).flatMap(underlyingActions);
+      syncGroupState();
+    };
+    actionInputs.forEach((input) => input.addEventListener("change", remember));
+    groupCheckbox.addEventListener("change", () => {
+      actionInputs
+        .filter((input) => !input.disabled)
+        .forEach((input) => (input.checked = groupCheckbox.checked));
+      remember();
+    });
+
+    syncGroupState();
+    if (feature === "stores") {
+      const note = document.createElement("small");
+      note.className = "role-permission-help";
+      note.textContent = "新增、編輯及費率設定僅限系統管理員";
+      container.append(note);
+    }
+    if (feature === "projects") {
+      const note = document.createElement("small");
+      note.className = "role-permission-help";
+      note.textContent = "新增 / 編輯及費率設定僅限系統管理員";
+      container.append(note);
+    }
+    return row;
   };
 
-  stores.addEventListener('change', render);
-  render();
+  const renderPermissionsTable = () => {
+    const tbody = dialog.querySelector(".role-permission-table tbody");
+    tbody.replaceChildren();
 
-  const close = () => dialog.close();
-  dialog.querySelector('.role-close').addEventListener('click', close);
-  dialog.querySelector('.role-cancel').addEventListener('click', close);
-  dialog.addEventListener('close', () => document.body.classList.remove('role-modal-open'));
+    Object.entries(displayActions).forEach((entry) => {
+      tbody.append(renderPermissionRow(entry));
+    });
+    const restricted = document.createElement("tr");
+    const title = document.createElement("th");
+    title.scope = "row";
+    title.textContent = "支付工具設定";
+    const description = document.createElement("td");
+    description.textContent = "僅系統管理員可檢視、新增及編輯，無法透過角色授權。商店與專案的費率設定亦維持系統管理員專屬。";
+    restricted.append(title, description);
+    tbody.append(restricted);
+  };
 
-  form.addEventListener('submit', event => {
+  storeSelect.addEventListener("change", renderPermissionsTable);
+  renderPermissionsTable();
+
+  // ───────────────────────── 4. Modal 控制與事件監聽 ─────────────────────────
+  const closeModal = () => dialog.close();
+
+  dialog.querySelector(".role-close").addEventListener("click", closeModal);
+  dialog.querySelector(".role-cancel").addEventListener("click", closeModal);
+  dialog.addEventListener("close", () =>
+    document.body.classList.remove("role-modal-open")
+  );
+
+  // 表單送出處理
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
+
+    // 收集所有選擇的權限
     const permissions = {};
-    Object.entries(config.actions).forEach(([feature, valid]) => {
-      permissions[feature] = valid.filter(action => form.querySelector('[name="' + feature + ':' + action + '"]').checked);
+    Object.entries(displayActions).forEach(([feature, actions]) => {
+      permissions[feature] = actions.filter(
+        (action) => form.elements[`${feature}:${action}`]?.checked && !form.elements[`${feature}:${action}`]?.disabled
+      ).flatMap(underlyingActions);
     });
 
     try {
       config.save({
         id: config.role?.id,
         name: form.elements.name.value,
-        store: stores.value,
+        store: storeSelect.value,
         note: form.elements.note.value,
-        enabled: form.elements.enabled.checked,
-        permissions
+        enabled: enabledCheckbox.checked,
+        permissions,
       });
-      close();
+      closeModal();
     } catch (err) {
-      const error = dialog.querySelector('.role-error');
-      error.hidden = false;
-      error.textContent = err.message;
+      errorAlert.hidden = false;
+      errorAlert.textContent = err.message;
     }
   });
 
   dialog.showModal();
-  document.body.classList.add('role-modal-open');
+  document.body.classList.add("role-modal-open");
 };
