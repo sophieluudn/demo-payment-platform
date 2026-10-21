@@ -3,6 +3,44 @@ const STORAGE = "payment-system-management-v2";
 const app = (page) => page.locator("#element-app");
 const field = (page, id) => page.locator(`[data-source-id="${id}"]`);
 
+test("edited payment unit can be changed and persists", async ({page}) => {
+  await page.goto("/payments.html");
+  await app(page).getByRole("link").filter({hasText:"國內信用卡一次付清"}).first().click();
+  const dialog = page.getByRole("dialog", {name:"編輯支付工具",exact:true});
+  const unit = dialog.locator('[data-field-name="unit"] .el-select');
+  await expect(unit.getByRole("combobox")).toBeEnabled();
+  await choose(page,unit,"元");
+  await dialog.getByRole("spinbutton").fill("150");
+  const date = dialog.locator(".el-date-editor input");
+  await date.fill("2099-11-01 00:00:00");
+  await date.press("Tab");
+  await dialog.getByRole("button", {name:"確定",exact:true}).click();
+  await expect(dialog).toBeHidden();
+  await page.reload();
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).data.paymentTools.find(t => t.id === "credit-card").unit,STORAGE)).toBe("元");
+});
+
+test("payment fee unit stays beside the rate and offers percent and currency", async ({page}) => {
+  await page.goto("/payments.html");
+  await app(page).getByRole("button", {name:"新增",exact:true}).click();
+  const dialog = page.getByRole("dialog", {name:"新增支付工具",exact:true});
+  const fee = dialog.locator(".ep-sys-payment-fee");
+  for (const width of [1280,390]) {
+    await page.setViewportSize({width,height:1000});
+    const {rate,unit} = await fee.evaluate(node => ({
+      rate:node.querySelector(".el-input-number").getBoundingClientRect().toJSON(),
+      unit:node.querySelector(".el-select").getBoundingClientRect().toJSON(),
+    }));
+    expect(unit.width).toBe(88);
+    expect(Math.abs(unit.y + unit.height / 2 - rate.y - rate.height / 2)).toBeLessThan(2);
+    expect(Math.abs(unit.x-rate.x-rate.width-12)).toBeLessThan(1);
+  }
+  await fee.locator(".el-select").click();
+  await expect(page.getByRole("option")).toHaveText(["%","元"]);
+  await page.getByRole("option", {name:"元",exact:true}).click();
+  await expect(fee.locator(".el-select")).toContainText("元");
+});
+
 test("store and project action buttons have a visible gap", async ({ page }) => {
   for (const width of [1280, 390]) {
     await page.setViewportSize({ width, height: 900 });

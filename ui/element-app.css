@@ -675,15 +675,19 @@ a:active {
   min-width: 0;
 }
 
-.el-dialog .ep-sys-payment-fee > .el-select {
+.el-dialog .ep-sys-payment-fee > [data-field-name="unit"] {
   width: 88px;
   flex: 0 0 88px;
 }
 
-.ep-sys-payment-fee > .el-input-number {
+.ep-sys-payment-fee > [data-field-name="rate"] {
   width: 160px;
   min-width: 0;
   flex: 0 1 160px;
+}
+.ep-sys-payment-fee > [data-field-name="rate"] > .el-input-number {
+  width: 100%;
+  min-width: 0;
 }
 
 .ep-sys-payment-fields [data-ui-tag="em"] {

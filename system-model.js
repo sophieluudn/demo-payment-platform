@@ -365,6 +365,8 @@
       if ((!input.id || !input.metadataOnly) && !this.canPlatform("fees","edit")) throw Error("設定預設費率需平台費率管理權限");
       const old = this.data.paymentTools.find((t) => t.id === input.id);
       if (input.id && !old) throw Error("支付工具不存在");
+      if (old && old.unit !== input.unit && !this.canPlatform("fees","edit"))
+        throw Error("變更計價單位需平台費率管理權限");
       const values = Object.fromEntries(
         ["platform", "name", "code", "currency", "note"].map((k) => [
           k,
@@ -388,8 +390,6 @@
         ...values,
         unit: input.unit,
       };
-      if (old && old.unit !== tool.unit)
-        throw Error("已建立的支付工具不可變更計價單位，請新增支付工具");
       if (
         this.data.paymentTools.some(
           (t) =>
@@ -400,12 +400,17 @@
       )
         throw Error("此平台已有相同支付工具名稱");
       if (old) {
-        if (!input.metadataOnly)
-          this.saveFeeVersion("global", old.id, {
+        const previousUnit = old.unit;
+        try {
+          old.unit = tool.unit;
+          if (!input.metadataOnly) this.saveFeeVersion("global", old.id, {
             id: input.versionId,
             effectiveAt: input.effectiveAt,
             entries: { [old.id]: { mode: "custom", fee: input.fee } },
           });
+        } finally {
+          old.unit = previousUnit;
+        }
         Object.assign(old, tool);
       } else {
         this.data.paymentTools.push(tool);

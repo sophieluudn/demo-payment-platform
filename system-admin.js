@@ -976,7 +976,7 @@
       `<label class="sys-code-field"><span><em>*</em> 付款方式代碼</span><div><p id="sys-code-help">代碼請參照 API 文件的交易類別，例如 CREDIT、LINEPAY 等</p><input name="code" aria-label="付款方式代碼" aria-describedby="sys-code-help" value="${esc(tool.code || "")}" required></div></label>`,
       fieldLabel(
         "手續費",
-        `<div class="sys-payment-fee"><input name="rate" type="number" min="0" step="any" required value="${esc(key ? version.entries[key].fee : "")}"><select name="unit" aria-label="計價單位" ${key ? "disabled" : ""}>${options(
+        `<div class="sys-payment-fee"><input name="rate" type="number" min="0" step="any" required value="${esc(key ? version.entries[key].fee : "")}"><select name="unit" aria-label="計價單位" >${options(
           [
             ["%", "%"],
             ["元", "元"],
@@ -1767,10 +1767,7 @@
           name: data.get("name"),
           code: data.get("code"),
           fee: form.dataset.metadataOnly === "true" ? app.resolveFee(key).fee : data.get("rate"),
-          // 編輯時計價單位 disabled，需從既有資料取
-          unit: key
-            ? app.data.paymentTools.find((t) => t.id === key).unit
-            : data.get("unit"),
+          unit: data.get("unit"),
           effectiveAt: data.get("effectiveAt") || undefined,
           versionId: form.dataset.version || undefined,
           currency: data.get("currency"),

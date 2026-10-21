@@ -333,7 +333,7 @@ test("fees use decimal arithmetic, zero is valid and fixed-dollar tools are supp
   );
 });
 
-test("tool metadata edits preserve fee history and reject changes to the charging unit", () => {
+test("tool metadata edits preserve fee history and charging units can be changed", () => {
   const app = new SystemManagement(migrate(seed()));
   global(app, "2.8");
   const tool = app.data.paymentTools.find((t) => t.id === "credit-card");
@@ -346,16 +346,14 @@ test("tool metadata edits preserve fee history and reject changes to the chargin
   });
   assert.equal(app.data.feeVersions.length, count);
   assert.equal(app.resolveFee(tool.id, { at: after }).fee, "2.8");
-  assert.throws(
-    () =>
-      app.savePaymentTool({
+  app.savePaymentTool({
         ...tool,
         unit: "元",
-        fee: "2",
-        metadataOnly: true,
-      }),
-    /計價單位/,
-  );
+        fee: "150",
+        effectiveAt: "2099-11-01T00:00:00+08:00",
+      });
+  assert.equal(tool.unit, "元");
+  assert.equal(app.data.feeVersions.length, count + 1);
 });
 
 test("store versions retain enabled tools independently across complete batches", () => {
