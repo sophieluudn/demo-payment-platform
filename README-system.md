@@ -6,6 +6,10 @@
 
 使用 Node.js 22 以上，執行 `npm ci`、`npm start`，開啟 http://127.0.0.1:4173/users.html 。修改 ui 後執行 `npm run build`；ui/dist 是不提交的建置產物。
 
+GitHub Pages 等靜態主機發布前也須執行 `npm ci` 與 `npm run build`，發布內容必須包含生成的 `ui/dist`、HTML、根目錄 JS／CSS 及 assets。僅上傳 Git 追蹤的原始碼不會包含 `ui/dist`，可能造成介面未載入；部署完成後可在瀏覽器 Network 確認 `ui/dist/element-app.js`、`ui/dist/element-app.css` 皆回傳 200。列表表頭與內容統一靠左，原始表格與 Element Plus 表格採相同設定。
+
+已提供 `.github/workflows/pages.yml`：安裝依賴、建置、執行模型測試，僅封裝網站檔案與生成的 UI 後發布。推送這個檔案後，在 GitHub 儲存庫 Settings → Pages → Source 選擇 GitHub Actions，再到 Actions → Build and publish GitHub Pages → Run workflow 手動發布。流程只有手動觸發，不會因 push 自動部署；不需將 `ui/dist` 加入版本控制。
+
 `npm test` 驗證模型、授權及費率；`npm run test:browser` 建置後執行 element-ui.spec.js 與 authorization-ui.spec.js，操作實際可見的 Element Plus 元件。其他舊版瀏覽器測試保留為遷移參考。
 
 ## 權限模型
