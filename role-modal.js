@@ -33,7 +33,11 @@ window.openRoleModal = (config) => {
         </div>
         <label>
           <span class="role-setting-label required">商店</span>
-          <select name="scope" aria-label="商店"></select>
+          <select name="scope" aria-label="商店" required></select>
+        </label>
+        <label>
+          <span class="role-setting-label">角色適用範圍</span>
+          <select name="project" aria-label="角色適用範圍"></select>
         </label>
         <label>
           <span class="role-setting-label">角色名稱</span>
@@ -74,12 +78,20 @@ window.openRoleModal = (config) => {
   const errorAlert = dialog.querySelector(".role-error");
 
   // 填入商店選單
+  storeSelect.add(new Option("請明確選擇商店或平台共用範圍", ""));
   config.stores.forEach((store) =>
-    storeSelect.add(new Option(store.name, store.id))
+    storeSelect.add(new Option(store.name, store.id || "__platform__"))
   );
   storeSelect.value = isEditing
-    ? (config.role.store ?? "")
+    ? (config.role.store || "__platform__")
     : (config.defaultStore ?? config.stores[0]?.id ?? "");
+  const projectSelect = form.elements.project;
+  const fillProjects = () => {
+    projectSelect.replaceChildren(new Option(storeSelect.value === "__platform__" ? "平台共用角色" : "商店共用角色", ""));
+    (config.projects || []).filter(p => p.store === storeSelect.value).forEach(p => projectSelect.add(new Option(`指定專案：${p.name}`,p.id)));
+    projectSelect.value = config.role?.project || "";
+  };
+  fillProjects();
 
   // 填入基本欄位
   form.elements.name.value = config.role?.name || "";
@@ -129,7 +141,7 @@ window.openRoleModal = (config) => {
       input.type = "checkbox";
       input.name = `${feature}:${action}`;
       input.checked = underlyingActions(action).some(value => selection[feature]?.includes(value));
-      input.disabled = !underlyingActions(action).every(value => config.allowed(storeSelect.value, feature, value));
+      input.disabled = !storeSelect.value || !underlyingActions(action).every(value => config.allowed(storeSelect.value === "__platform__" ? "" : storeSelect.value, feature, value, projectSelect.value));
       input.dataset.permission = feature;
       input.setAttribute("aria-label", config.labels[feature] + config.labels[action]);
 
@@ -165,13 +177,13 @@ window.openRoleModal = (config) => {
     if (feature === "stores") {
       const note = document.createElement("small");
       note.className = "role-permission-help";
-      note.textContent = "新增、編輯及費率設定僅限系統管理員";
+      note.textContent = "新增商店需平台權限；編輯需目標商店權限。費率另行授權。";
       container.append(note);
     }
     if (feature === "projects") {
       const note = document.createElement("small");
       note.className = "role-permission-help";
-      note.textContent = "新增 / 編輯及費率設定僅限系統管理員";
+      note.textContent = "新增需整店專案管理權限；編輯限授權專案。費率另行授權。";
       container.append(note);
     }
     return row;
@@ -184,17 +196,10 @@ window.openRoleModal = (config) => {
     Object.entries(displayActions).forEach((entry) => {
       tbody.append(renderPermissionRow(entry));
     });
-    const restricted = document.createElement("tr");
-    const title = document.createElement("th");
-    title.scope = "row";
-    title.textContent = "支付工具設定";
-    const description = document.createElement("td");
-    description.textContent = "僅系統管理員可檢視、新增及編輯，無法透過角色授權。商店與專案的費率設定亦維持系統管理員專屬。";
-    restricted.append(title, description);
-    tbody.append(restricted);
   };
 
-  storeSelect.addEventListener("change", renderPermissionsTable);
+  storeSelect.addEventListener("change", () => { fillProjects(); renderPermissionsTable(); });
+  projectSelect.addEventListener("change", renderPermissionsTable);
   renderPermissionsTable();
 
   // ───────────────────────── 4. Modal 控制與事件監聽 ─────────────────────────
@@ -222,7 +227,8 @@ window.openRoleModal = (config) => {
       config.save({
         id: config.role?.id,
         name: form.elements.name.value,
-        store: storeSelect.value,
+        store: storeSelect.value === "__platform__" ? "" : storeSelect.value,
+        project: projectSelect.value,
         note: form.elements.note.value,
         enabled: enabledCheckbox.checked,
         permissions,

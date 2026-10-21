@@ -54,10 +54,9 @@
   let saved;
   let storageIssue = false;
   try {
-    saved = JSON.parse(
-      localStorage.getItem(STORAGE) || localStorage.getItem(LEGACY_STORAGE),
-    );
-    if (saved && !isSavedData(saved.data)) {
+    const raw = localStorage.getItem(STORAGE) ?? localStorage.getItem(LEGACY_STORAGE);
+    saved = raw == null ? null : JSON.parse(raw);
+    if (raw != null && !isSavedData(saved?.data)) {
       saved = null;
       storageIssue = true;
     }
@@ -67,16 +66,17 @@
 
   const app = new Management(
     migrate(saved?.data || seed()),
-    saved?.currentUserId || "admin",
+    storageIssue ? "invalid" : saved ? (saved.currentUserId ?? "invalid") : "admin",
     saved?.store,
   );
-  if (route === "stores" && app.user.system) SystemManagement.installFeeDemo(app.data);
+  if (route === "stores" && app.isSystem) SystemManagement.installFeeDemo(app.data);
+  let persistedData = structuredClone(app.data);
   const main = document.querySelector("main");
   const originalMain = main.innerHTML;
 
-  // 進入頁面時所在的商店；非系統管理員的篩選預設為此商店
+  // 進入時商店是所有身分的查詢預設，查詢不改變工作階段。
   const enteredStore = app.store;
-  const defaultFilter = (storeId) => (app.user.system ? "" : storeId);
+  const defaultFilter = (storeId) => storeId;
 
   let search = "";
   let paymentPlatform = "";
@@ -110,8 +110,20 @@
       )
       .join("");
 
-  const button = (text, action, extra = "", cls = "plain") =>
-    `<button type="button" class="btn ${cls}" data-action="${action}" ${extra}>${text}</button>`;
+  const OPERATION_PERMISSIONS = {
+    "new-role":["roles","create"], "edit-role":["roles","edit"],
+    "new-user":["users","create"], "edit-user":["users","edit"],
+    "new-project":["projects","create"], "edit-project":["projects","edit","project"],
+    "new-store":["stores","create","platform"], "edit-store":["stores","edit","store"],
+    "new-payment":["payments","create","platform"], "tool-metadata":["payments","edit","platform"],
+    "fee-store":["fees","view","store"], "fee-project":["fees","view","project"],
+    "store-fee-new":["fees","edit"], "store-fee-revise":["fees","edit"],
+  };
+  const button = (text, action, extra = "", cls = "plain") => {
+    const permission = OPERATION_PERMISSIONS[action];
+    const attrs = permission ? `data-permission-feature="${permission[0]}" data-permission-action="${permission[1]}"` + (permission[2] ? ` data-permission-scope="${permission[2]}" data-permission-target="${extra.match(/data-id="([^"]+)"/)?.[1] || ""}"` : "") : "";
+    return `<button type="button" class="btn ${cls}" data-action="${action}" ${attrs} ${extra}>${text}</button>`;
+  };
 
   const table = (head, rows, cls = "") => {
     const headHtml = head.map((x) => `<th scope="col">${x}</th>`).join("");
@@ -147,7 +159,7 @@
   const storeName = (id) =>
     app.data.stores.find((s) => s.id === id)?.name || id;
   const projectById = (id) => app.data.projects.find((p) => p.id === id);
-  const storeOptions = () => app.stores().map((s) => [s.id, s.name]);
+  const storeOptions = () => app.stores(route).map((s) => [s.id, s.name]);
 
   // 以指定商店（與資料副本）建立權限範圍
   const scoped = (storeId, data = app.data) =>
@@ -178,14 +190,13 @@
   const userEditable = (user) =>
     userProjects().some(
       (project) =>
-        user.grants[project.id] && scoped(project.store).canEditUser(user.id),
+        (user.grants[project.id] || user.storeGrants?.[project.store] || user.platformRoles?.length) && scoped(project.store).canEditUser(user.id),
     );
 
   // 指定操作下，可管理的商店與專案
   function manageableScope(action) {
     const stores = app
-      .stores()
-      .filter((store) => scoped(store.id).manageable(action).length);
+      .stores("users",action);
     const projects = stores.flatMap((store) =>
       scoped(store.id).manageable(action),
     );
@@ -219,15 +230,16 @@
           store: app.store,
         }),
       );
+      persistedData = structuredClone(app.data);
     } catch {
-      if (strict) throw Error("無法保存資料，請確認瀏覽器儲存空間後重試");
+      if (strict) { app.data = structuredClone(persistedData); throw Error("無法保存資料，請確認瀏覽器儲存空間後重試"); }
       toast("無法保存資料，請確認瀏覽器儲存空間");
     }
   }
 
   // 儲存 → 重新渲染 → 提示
   function saveAndRender(message) {
-    persist();
+    persist(true);
     render();
     toast(message);
   }
@@ -243,11 +255,11 @@
     main.innerHTML = `<section id="sys-content" aria-label="${title}"></section>`;
     const el = main.querySelector("#sys-content");
     document.querySelector('aside a[href="payments.html"]').hidden =
-      !app.user.system;
+      !app.canPlatform("payments") && !app.canPlatform("fees");
 
-    if (route === "payments" && !app.user.system) {
+    if (route === "payments" && !app.canPlatform("payments") && !app.canPlatform("fees")) {
       el.innerHTML =
-        '<div class="sys-empty"><h2>無存取權限</h2><p>支付工具設定僅開放系統管理員。</p></div>';
+        '<div class="sys-empty"><h2>無存取權限</h2><p>需要平台支付工具或費率檢視權限。</p></div>';
       return;
     }
     if (!app.stores().length) {
@@ -318,9 +330,7 @@
       ),
 
     roles: (create) => {
-      const storeItems = app.user.system
-        ? [["", "全部"], ...storeOptions()]
-        : storeOptions();
+      const storeItems = [["", "全部商店（授權範圍）"], ...storeOptions()];
       return searchForm(
         "roles",
         searchField(
@@ -404,11 +414,11 @@
   function roles(el) {
     const list = app.data.roles.filter(
       (role) =>
-        (app.user.system
-          ? !roleStore || role.store === roleStore
-          : role.store === roleStore) && matches(role.name),
+        (!roleStore || !role.store || role.store === roleStore) &&
+        (app.isSystem || app.stores("roles").some(s => !role.store || role.store === s.id)) &&
+        (!role.project || app.can(role.project,"roles","view")) && matches(role.name),
     );
-    const canCreate = app.user.system || app.canManageRoles(roleStore, "create");
+    const canCreate = app.isSystem || app.stores("roles","create").length > 0;
 
     renderList(el, {
       create: canCreate
@@ -417,44 +427,37 @@
       list,
       head: ["編號", "角色名稱", "商店", "狀態", "功能"],
       row: (role, index) => {
-        const canEdit =
-          app.user.system ||
-          (role.store === roleStore &&
-            !role.manager &&
-            app.canManageRoles(roleStore));
-        return `<tr><td>${(page - 1) * size + index + 1}</td><td>${esc(role.name)}</td><td>${esc(role.store ? storeName(role.store) : "全部商店")}</td><td>${role.enabled === false ? "不啟用" : "啟用"}</td><td>${canEdit ? button("編輯", "edit-role", `data-id="${role.id}"`, "primary") : "唯讀"}</td></tr>`;
+        let canEdit = false;
+        try { app.assertRoleEditable(role); canEdit = true; } catch { /* show read-only */ }
+        const scopeLabel = role.project ? `${storeName(role.store)}／指定專案：${projectById(role.project)?.name}` : role.store ? `${storeName(role.store)}／商店共用` : "平台共用（適用全部商店）";
+        return `<tr><td>${(page - 1) * size + index + 1}</td><td>${esc(role.name)}</td><td>${esc(scopeLabel)}</td><td>${role.enabled === false ? "不啟用" : "啟用"}</td><td>${canEdit ? button("編輯", "edit-role", `data-id="${role.id}"`, "primary") : "唯讀；可建立獨立角色"}</td></tr>`;
       },
     });
   }
 
   function roleEditor(id) {
     const role = app.role(id);
-    const scope = app.user.system
+    const scope = app.isSystem
       ? (role?.store ?? (roleStore || ""))
       : role?.store || roleStore || app.store;
 
-    if (!app.canManageRoles(scope, id ? "edit" : "create")) return toast("沒有此商店的角色管理權限");
-    if (
-      !app.user.system &&
-      role &&
-      (!role.store || role.store !== scope || role.manager)
-    )
-      return toast("只能編輯自己商店的自訂角色");
+    if (role) { try { app.assertRoleEditable(role); } catch(error) { return toast(error.message); } }
 
-    const storeList = app.user.system
-      ? [{ id: "", name: "全部商店" }, ...app.stores()]
-      : app.stores().filter((store) => store.id === scope);
+    const storeList = [
+      ...(app.canPlatform("roles","edit") ? [{id:"",name:"平台共用（全部商店）"}] : []),
+      ...app.stores("roles", "create"),
+    ];
 
     window.openRoleModal({
       role,
       stores: storeList,
       defaultStore: scope,
+      projects: app.data.projects.filter(p => app.can(p.id,"roles",id ? "edit" : "create")),
       actions,
       labels,
-      allowed: (store, feature, action) =>
-        app.roleActionAllowed(store, feature, action),
+      allowed: (store, feature, action, project) =>
+        app.roleActionAllowed(store, feature, action, project),
       save: (input) => {
-        if (input.store) app.switchStore(input.store);
         app.saveRole(input);
         saveAndRender("角色設定已儲存");
       },
@@ -487,22 +490,23 @@
     const list = app.data.users.filter(
       (user) =>
         !user.system &&
-        visible.some((project) => user.grants[project]) &&
+        (visible.some((project) => user.grants[project] || user.storeGrants?.[projectById(project)?.store] || user.platformRoles?.length) || Object.keys(user.storeGrants || {}).some(store => (!userStore || store === userStore) && app.canStore(store,"users","view"))) &&
         matches(user.name + " " + user.login + " " + (user.email || "")),
     );
 
     renderList(el, {
-      create: app.manageable("create").length
+      create: app.stores("users","create").length
         ? button("新增", "new-user", "", "success")
         : "<span>未授予新增使用者權限</span>",
       list,
       head: ["姓名", "Email 帳號", "商店", "專案", "角色", "狀態"],
       row: (u) => {
-        const granted = visible.filter((project) => u.grants[project]);
-        const nameCell = userEditable(u)
+        const granted = visible.filter((project) => u.grants[project] || u.storeGrants?.[projectById(project)?.store] || u.platformRoles?.length);
+        const nameCell = userEditable(u) || Object.keys(u.storeGrants || {}).some(s => (!userStore || s === userStore) && app.canStore(s,"users","edit"))
           ? `<a href="#" data-action="edit-user" data-id="${esc(u.id)}">${esc(u.name)}</a>`
           : esc(u.name);
-        return `<tr><td>${nameCell}</td><td>${esc(u.email || u.login)}</td><td>${grantLines(granted, (id) => storeName(projectById(id)?.store))}</td><td>${grantLines(granted, (id) => projectById(id)?.name)}</td><td>${grantLines(granted, (id) => app.role(u.grants[id])?.name)}</td><td>${u.enabled === false ? "不啟用" : "啟用"}</td></tr>`;
+        const emptyStores = Object.keys(u.storeGrants || {}).filter(s => (!userStore || s === userStore) && app.canStore(s,"users","view") && !app.data.projects.some(p => p.store === s));
+        return `<tr><td>${nameCell}</td><td>${esc(u.email || u.login)}</td><td>${grantLines(granted, (id) => storeName(projectById(id)?.store))}${emptyStores.map(s => esc(storeName(s))).join("、")}</td><td>${grantLines(granted, (id) => `${projectById(id)?.name}（${u.platformRoles?.length ? "全域授權" : u.storeGrants?.[projectById(id)?.store] ? "整店授權" : "指定專案"}）`)}${emptyStores.length ? "整店授權（目前無專案）" : ""}</td><td>${grantLines(granted, (id) => app.rolesAt(u,"project",id).map(r => r.name).join("、"))}${emptyStores.map(s => esc(app.role(u.storeGrants[s])?.name)).join("、")}</td><td>${u.enabled === false ? "不啟用" : "啟用"}</td></tr>`;
       },
     });
   }
@@ -513,8 +517,8 @@
 
   function userAccountFields(mode, edit, current) {
     if (mode === "existing") {
-      const control = app.user.system
-        ? `<label>選擇既有帳號<select name="existing-id" required><option value="">請選擇</option>${options(app.availableExisting().map((u) => [u.id, `${u.name}（${u.login}）`]))}</select></label>`
+      const control = app.isSystem
+        ? `<label>選擇既有帳號<select name="existing-id" required><option value="">請選擇</option>${options(app.data.users.filter(u => !u.system).map((u) => [u.id, `${u.name}（${u.login}）`]))}</select></label>`
         : '<label>既有登入帳號<input name="existing-login" required placeholder="輸入登入帳號"></label>';
       return `<div class="sys-form-fields">${control}</div>`;
     }
@@ -525,10 +529,10 @@
   function userGrantRow(project, current, assignable) {
     const prior = app.role(current?.grants[project.id]);
     const lock =
-      !app.user.system &&
-      (prior?.manager || (prior && !assignable.some((r) => r.id === prior.id)));
+      !app.isSystem &&
+      (prior && !assignable.some((r) => r.id === prior.id));
     const roleCell = lock
-      ? `<span>保留：${esc(prior.name)}<br>此角色僅系統管理員可變更</span>`
+      ? `<span>保留：${esc(prior.name)}<br>無此範圍的角色授予權限</span>`
       : `<select name="role-${project.id}" aria-label="${esc(project.name)}角色" ${prior ? "" : "disabled"}>${options(
           assignable.map((r) => [r.id, r.name]),
           prior?.id || assignable[0]?.id,
@@ -536,20 +540,19 @@
     return `<tr><td><input type="checkbox" name="grant" value="${project.id}" aria-label="選擇${esc(project.name)}" ${prior && !lock ? "checked" : ""} ${lock ? "disabled" : ""}></td><td>${esc(project.name)}</td><td>${roleCell}</td></tr>`;
   }
 
-  function userEditor(id, mode = id ? "edit" : "new") {
+  function userEditor(id, mode = id ? "edit" : "new", targetStore = userStore) {
     const edit = mode === "edit";
     const current = app.data.users.find((u) => u.id === id);
     if (edit && !app.canEditUser(id))
-      return toast("此使用者編輯範圍或身分規則待確認");
+      return toast("沒有此使用者的編輯權限");
 
-    const manageableProjects = app.manageable(edit ? "edit" : "create");
-    if (!manageableProjects.length) return toast("沒有此操作權限");
-    const assignable = app.assignableRoles();
+    const context = scoped(targetStore);
+    const manageableProjects = targetStore ? context.manageable(edit ? "edit" : "create") : [];
 
     const grantTable = table(
       ["選擇", "專案名稱", "角色"],
       manageableProjects
-        .map((p) => userGrantRow(p, current, assignable))
+        .map((p) => userGrantRow(p, current, context.assignableRoles(p.id)))
         .join(""),
     );
 
@@ -558,14 +561,29 @@
       (edit ? "" : userModeSwitch(mode)) +
       `<form id="sys-user-form" data-mode="${mode}" data-id="${esc(id || "")}">` +
       userAccountFields(mode, edit, current) +
-      `<h3>目前商店：${esc(storeName(app.store))}</h3>` +
+      `<label>所屬商店<select id="existing-target-store" name="target-store" required>${options([["","請明確選擇商店"],...app.stores("users","create").map(s => [s.id,s.name])],targetStore)}</select></label>` +
       grantTable +
       `<div class="sys-form-actions"><button type="submit" class="btn primary">確定</button>${button("取消", "cancel")}</div><p class="sys-error" role="alert"></p></form>`;
     focusEditor();
   }
 
   // --- Modal 式新增 / 編輯 ---
-  const assignableRolesOf = (store) => scoped(store).assignableRoles();
+  const assignableRolesOf = (store, project) => scoped(store).assignableRoles(project, store);
+  const storeRolesOf = store => app.data.roles.filter(r => app.canStore(store,"users","edit") && app.canGrant(r,"store",store));
+  const platformRolesOf = () => app.data.roles.filter(r => app.canPlatform("users","edit") && app.canGrant(r,"platform",""));
+  const grantInput = (input, user) => {
+    const grants = {}, storeGrants = {};
+    let platformRoles;
+    for (const g of input.revoked || []) {
+      if (g.project === "__platform__") platformRoles = (platformRoles || app.roleIds(user?.platformRoles)).filter(id => id !== g.role);
+      else (g.project === "__store__" ? storeGrants : grants)[g.project === "__store__" ? g.store : g.project] = null;
+    }
+    for (const g of input.grants.filter(g => !g.locked && !g.original)) {
+      if (g.project === "__platform__") platformRoles = [...new Set([...(platformRoles || app.roleIds(user?.platformRoles)),g.role])];
+      else (g.project === "__store__" ? storeGrants : grants)[g.project === "__store__" ? g.store : g.project] = g.role;
+    }
+    return {grants,storeGrants,...(platformRoles !== undefined ? {platformRoles} : {})};
+  };
 
   function newUserModal() {
     const { stores, projects } = manageableScope("create");
@@ -574,20 +592,14 @@
       stores,
       projects,
       roles: assignableRolesOf,
+      storeRoles: storeRolesOf,
+      platformRoles: platformRolesOf,
+      roleName: id => app.role(id)?.name,
+      defaultStore: userStore,
       onExisting: () => userEditor(undefined, "existing"),
       onSave: (input) => {
         const copy = cloneData();
-        let created;
-        for (const [store, grants] of grantsByStore(input.grants)) {
-          created = scoped(store, copy).saveUser({
-            mode: created ? "existing" : "new",
-            id: created?.id,
-            name: input.name,
-            login: input.login,
-            grants,
-          });
-        }
-        created.enabled = input.enabled;
+        const created = new Management(copy,app.identity,app.store).saveUser({mode:"new",name:input.name,login:input.login,enabled:input.enabled,...grantInput(input)});
         created.email = input.login.trim();
         created.grantBatches = input.grantBatches || [];
         app.data.users = copy.users;
@@ -604,56 +616,46 @@
       (project) =>
         user?.grants[project.id] && scoped(project.store).canEditUser(id),
     );
-    if (contextProject) app.switchStore(contextProject.store);
-    if (!app.canEditUser(id)) return toast("沒有此使用者的編輯權限");
+
+    if (!app.data.stores.some(s => scoped(s.id).canEditUser(id))) return toast("沒有此使用者的編輯權限");
 
     const { stores, projects } = manageableScope("edit");
 
-    // 沒有權限、或角色僅系統管理員可變更 → 鎖定該專案授權
+    // 鎖定缺少目標管理或角色授予權的專案。
     const locked = (projectId) => {
       const prior = app.role(user.grants[projectId]);
+      if (!projectById(projectId)) return true;
       const scope = scoped(projectById(projectId).store);
       return (
         !projects.some((item) => item.id === projectId) ||
-        (!app.user.system &&
-          (prior?.manager ||
-            (prior &&
-              !scope.assignableRoles().some((role) => role.id === prior.id))))
+        (!app.isSystem &&
+          ((prior && !scope.assignableRoles(projectId).some((role) => role.id === prior.id))))
       );
     };
 
     window.openUserCreateModal({
       user,
+      canChangeState: app.canChangeUserState(id),
       stores,
       projects,
       roles: assignableRolesOf,
+      storeRoles: storeRolesOf,
+      platformRoles: platformRolesOf,
+      defaultStore: userStore,
       storeName,
       projectName: (projectId) => projectById(projectId)?.name,
       roleName: (roleId) => app.role(roleId)?.name,
-      grants: Object.entries(user.grants).map(([project, role]) => ({
+      grants: [...Object.entries(user.grants).map(([project, role]) => ({
         project,
         role,
-        store: projectById(project).store,
+        original: true,
+        store: projectById(project)?.store,
         locked: locked(project),
-      })),
+      })),...Object.entries(user.storeGrants || {}).map(([store,role]) => ({store,project:"__store__",role,original:true,locked:!app.canStore(store,"users","edit") || !app.canGrant({...app.role(role),enabled:true},"store",store)})),...app.roleIds(user.platformRoles).map(role => ({store:"__platform__",project:"__platform__",role,original:true,locked:!app.canPlatform("users","edit") || !app.canGrant({...app.role(role),enabled:true},"platform","")}))],
       onSave: (input) => {
         const copy = cloneData();
-        const editable = input.grants.filter((grant) => !locked(grant.project));
-
-        for (const [store, grants] of grantsByStore(editable))
-          scoped(store, copy).saveUser({ mode: "edit", id, grants });
-
-        // 移除使用者在表單中刪掉、且未鎖定的授權
-        const updated = copy.users.find((u) => u.id === id);
-        for (const project of Object.keys(updated.grants))
-          if (
-            !locked(project) &&
-            !input.grants.some((grant) => grant.project === project)
-          )
-            delete updated.grants[project];
-
+        const updated = new Management(copy,app.identity,app.store).saveUser({mode:"edit",id,enabled:input.enabled,...grantInput(input,user)});
         updated.name = input.name.trim();
-        updated.enabled = input.enabled;
         updated.grantBatches = input.grantBatches || [];
         app.data.users = copy.users;
         saveAndRender("使用者資料已儲存");
@@ -667,17 +669,18 @@
   function projects(el) {
     const list = accessibleProjects().filter(
       (p) =>
+        app.can(p.id,"projects","view") &&
         (!projectStore || p.store === projectStore) &&
         matches(p.name + " " + storeName(p.store)),
     );
 
     renderList(el, {
-      create: app.user.system ? button("新增專案", "new-project", "", "success") : unavailableCreate(),
+      create: app.stores().some(s => app.canStore(s.id,"projects","create")) ? button("新增專案", "new-project", "", "success") : "",
       list,
       head: ["商店", "專案名稱", "狀態", "目前啟用支付工具", "功能"],
       cls: "project-management-table",
       row: (p) =>
-        `<tr><td>${esc(storeName(p.store))}</td><td>${esc(p.name)}</td><td>${p.enabled === false ? "停用" : "啟用"}</td><td>${esc(app.paymentSettingsForProject(p.id).filter(t => t.enabled !== false).map(t => t.name).join("、"))}</td><td>${app.user.system ? button("管理手續費", "fee-project", `data-id="${esc(p.id)}"`) + button("編輯專案", "edit-project", `data-id="${esc(p.id)}"`) : button("檢視", "project-detail", `data-id="${p.id}"`, "gray")}</td></tr>`,
+        `<tr><td>${esc(storeName(p.store))}</td><td>${esc(p.name)}</td><td>${p.enabled === false ? "停用" : "啟用"}</td><td>${esc(app.paymentSettingsForProject(p.id).filter(t => t.enabled !== false).map(t => t.name).join("、"))}</td><td>${app.can(p.id,"fees","view") ? button("管理手續費", "fee-project", `data-id="${esc(p.id)}"`) : ""}${app.can(p.id,"projects","edit") ? button("編輯專案", "edit-project", `data-id="${esc(p.id)}"`) : button("檢視", "project-detail", `data-id="${p.id}"`, "gray")}</td></tr>`,
     });
   }
 
@@ -685,7 +688,7 @@
     const p = accessibleProjects().find((item) => item.id === id);
     if (!p) return toast("此專案未授權");
 
-    const isAdmin = app.user.system;
+    const isAdmin = app.isSystem;
     const credit = app
       .paymentSettingsForProject(p.id)
       .find((t) => t.id === "credit-card");
@@ -708,11 +711,11 @@
   }
 
   function projectEditor(id = "") {
-    if (!app.user.system) return;
+    if (!(id ? app.can(id,"projects","edit") : app.stores().some(s => app.canStore(s.id,"projects","create")))) return;
     const project = app.data.projects.find(p => p.id === id);
     const opener = document.activeElement;
     const close = () => { removeDialog("#project-profile-dialog"); opener?.focus(); };
-    const dialog = createDialog("project-profile-dialog", "project-profile-title", `<h2 id="project-profile-title">${id ? "編輯專案" : "新增專案"}</h2><form class="store-profile-form"><label class="store-status-field"><span>狀態</span><input type="checkbox" data-switch name="enabled" aria-label="狀態" ${project?.enabled !== false ? "checked" : ""}></label><label><span>所屬商店 <em>*</em></span><select name="store" aria-label="所屬商店" required ${id ? "disabled" : ""}>${options(app.data.stores.map(s=>[s.id,s.name]),project?.store || projectStore || app.store)}</select></label><label><span>專案名稱 <em>*</em></span><input name="name" aria-label="專案名稱" required value="${esc(project?.name || "")}"></label><label><span>專案 ID</span><input name="projectId" aria-label="專案 ID" value="${esc(project?.projectId ?? project?.id ?? "")}"></label><label><span>專案 Token</span><input name="token" aria-label="專案 Token" value="${esc(project?.token || "")}"></label><p class="sys-error" role="alert"></p><div class="sys-modal-actions">${button("取消","project-profile-close")}<button type="submit" class="btn primary">確定</button></div></form>`,close);
+    const dialog = createDialog("project-profile-dialog", "project-profile-title", `<h2 id="project-profile-title">${id ? "編輯專案" : "新增專案"}</h2><form class="store-profile-form"><label class="store-status-field"><span>狀態</span><input type="checkbox" data-switch name="enabled" aria-label="狀態" ${project?.enabled !== false ? "checked" : ""}></label><label><span>所屬商店 <em>*</em></span><select name="store" aria-label="所屬商店" required ${id ? "disabled" : ""}>${options([["", "請選擇所屬商店"],...app.data.stores.filter(s => id ? s.id === project?.store : app.canStore(s.id,"projects","create")).map(s=>[s.id,s.name])],project?.store || projectStore)}</select></label><label><span>專案名稱 <em>*</em></span><input name="name" aria-label="專案名稱" required value="${esc(project?.name || "")}"></label><label><span>專案 ID</span><input name="projectId" aria-label="專案 ID" value="${esc(project?.projectId ?? project?.id ?? "")}"></label><label><span>專案 Token</span><input name="token" aria-label="專案 Token" value="${esc(project?.token || "")}"></label><p class="sys-error" role="alert"></p><div class="sys-modal-actions">${button("取消","project-profile-close")}<button type="submit" class="btn primary">確定</button></div></form>`,close);
     dialog.querySelector('[data-action="project-profile-close"]').addEventListener("click",close);
     const form = dialog.querySelector("form");
     form.addEventListener("submit",event=>{
@@ -730,26 +733,25 @@
    * ======================================================================== */
   function stores(el) {
     const list = app
-      .stores()
+      .stores("stores")
       .filter((s) => (!storeFilter || s.id === storeFilter) && matches(s.name));
 
-    if (app.user.system) return storesForAdmin(el, list);
-    storesForMember(el, list);
+    return storesForAdmin(el, list);
   }
 
   function storesForAdmin(el, list) {
-    renderList(el, {create: button("新增商店", "new-store", "", "success"), list,
+    renderList(el, {create: app.canPlatform("stores","create") ? button("新增商店", "new-store", "", "success") : "", list,
       head: ["商店名稱", "狀態", "目前啟用支付工具", "功能"],
       cls: "store-management-table",
       row: s => {
         const v = app.activeFeeVersion("store", s.id);
         const names = app.data.paymentTools.filter(t => v?.entries[t.id]?.enabled !== false).map(t => t.name);
-        return `<tr><td><strong>${esc(s.name)}</strong></td><td>${s.enabled === false ? "停用" : "啟用"}</td><td class="store-tool-names">${esc(names.join("、") || "尚未設定")}</td><td>${button("管理手續費","fee-store",`data-id="${esc(s.id)}"`)}${button("編輯商店","edit-store",`data-id="${esc(s.id)}"`)}</td></tr>`;
+        return `<tr><td>${esc(s.name)}</td><td>${s.enabled === false ? "停用" : "啟用"}</td><td class="store-tool-names">${esc(names.join("、") || "尚未設定")}</td><td>${app.canStore(s.id,"fees","view") ? button("管理手續費","fee-store",`data-id="${esc(s.id)}"`) : ""}${app.canStore(s.id,"stores","edit") ? button("編輯商店","edit-store",`data-id="${esc(s.id)}"`) : ""}</td></tr>`;
       }});
   }
 
   function storeEditor(id = "") {
-    if (!app.user.system) return;
+    if (!(id ? app.canStore(id,"stores","edit") : app.canPlatform("stores","create"))) return;
     const store = app.data.stores.find(s => s.id === id);
     const opener = document.activeElement;
     const close = () => { removeDialog("#store-profile-dialog"); opener?.focus(); };
@@ -765,7 +767,7 @@
         const key = id || ("store-" + crypto.randomUUID());
         commitFeeChange(() => {
           const data = {name, storeId, token: form.elements.token.value.trim(), enabled:form.elements.enabled.checked};
-          if (store) Object.assign(store,data); else app.data.stores.push({id:key,...data});
+          app.saveStore({id:id || undefined,...data});
         });
         close();
         if (storePageId) storeFeePage(storePageId); else render();
@@ -782,7 +784,7 @@
 
   function storeFeePage(id) {
     const scope = route === "projects" ? "project" : "store";
-    if (!app.user.system || !(scope === "project" ? accessibleProjects() : app.stores()).some(s => s.id === id)) return;
+    if (!app.allowed(scope,id,"fees","view")) return;
     if (storePageId !== id) feePage = 1;
     storePageId = id;
     const breadcrumb = document.querySelector(".breadcrumb");
@@ -798,9 +800,13 @@
       const expired = v.endsAt && new Date(v.endsAt) <= new Date();
       const effectiveStatus = app.storeFeeState(id,v);
       const reason = v.cancelledAt ? "此版本已取消或被修訂" : !enabled ? "此版本已停用" : effectiveStatus === "未套用" && current ? `ID ${versions.length-versions.findIndex(n=>n.id===current.id)} 的手續費開始時間較近，目前優先套用` : "";
-      return `<tr><td>${versions.length-offset-i}</td><td>${enabled ? "啟用" : "停用"}</td><td><span title="${esc(reason)}">${effectiveStatus}</span></td><td>${start}</td><td>${end}</td><td>${feeDate(v.createdAt)}</td><td>${button("編輯","store-fee-revise",attrs + (v.cancelledAt || effectiveStatus === "已結束" ? " disabled" : ""))}${button("檢視","store-fee-view",attrs)}</td></tr>`;
+      return `<tr><td>${versions.length-offset-i}</td><td>${enabled ? "啟用" : "停用"}</td><td><span title="${esc(reason)}">${effectiveStatus}</span></td><td>${start}</td><td>${end}</td><td>${feeDate(v.createdAt)}</td><td>${button("編輯","store-fee-revise",attrs + (!app.allowed(scope,id,"fees","edit") || v.cancelledAt || effectiveStatus === "已結束" ? " disabled" : ""))}${button("檢視","store-fee-view",attrs)}</td></tr>`;
     }).join("");
-    main.querySelector("#sys-content").innerHTML = `<div class="store-page-heading"><div>${button("返回","cancel")}<h2>${esc(feeTargetName(scope,id))}</h2></div></div><h3>手續費率</h3><div class="store-fee-heading">${storeFeePager(versions.length)}${button("新增手續費率","store-fee-new",`data-id="${esc(id)}"`,"success")}</div>${!current ? `<p class="store-fee-fallback">目前${scope === "project" ? "繼承商店費率" : "套用系統費率"}</p>` : ""}${table(["ID","設定狀態","費率生效狀態","手續費開始時間","手續費結束時間","設定時間","功能"], rows || `<tr><td colspan="7" class="empty">尚無${scope === "project" ? "專案" : "商店"}費率版本</td></tr>`, "store-fee-versions-table")}`;
+    const effectiveRows = app.data.paymentTools.map(tool => {
+      const rate = app.resolveFee(tool.id,ownFeeOptions(scope,id));
+      return `<tr><td>${esc(tool.name)}</td><td>${current?.entries[tool.id]?.mode === "custom" ? "自訂" : "繼承"}</td><td>${feeText(rate)}</td><td>${feeSource(rate)}</td></tr>`;
+    }).join("");
+    main.querySelector("#sys-content").innerHTML = `<div class="store-page-heading"><div>${button("返回","cancel")}<h2>${esc(feeTargetName(scope,id))}</h2></div></div><h3>手續費率</h3><div class="store-fee-heading">${storeFeePager(versions.length)}${app.allowed(scope,id,"fees","edit") ? button("新增手續費率","store-fee-new",`data-id="${esc(id)}"`,"success") : ""}</div>${!current ? `<p class="store-fee-fallback">目前${scope === "project" ? "繼承商店費率" : "套用系統費率"}</p>` : ""}${table(["ID","設定狀態","費率生效狀態","手續費開始時間","手續費結束時間","設定時間","功能"], rows || `<tr><td colspan="7" class="empty">尚無${scope === "project" ? "專案" : "商店"}費率版本</td></tr>`, "store-fee-versions-table")}${table(["支付工具","設定方式","目前生效費率","來源"],effectiveRows,"effective-fee-table")}`;
   }
 
   function storesForMember(el, list) {
@@ -826,11 +832,9 @@
 
   function storeDetail(id) {
     if (!app.stores().some((s) => s.id === id)) return toast("此商店未授權");
-    app.switchStore(id);
-    persist();
 
     const projectRows = app
-      .projects()
+      .data.projects.filter(p => p.store === id && app.can(p.id,"projects","view"))
       .map(
         (p) =>
           `<tr><td>${esc(p.name)}</td><td>${esc(storeName(p.store))}</td></tr>`,
@@ -855,8 +859,13 @@
   }
 
   function payments(el) {
-    if (!app.user.system) {
-      el.innerHTML = "<p>支付工具設定僅開放系統管理員。</p>";
+    if (!app.canPlatform("payments") && !app.canPlatform("fees")) {
+      el.innerHTML = "<p>需要平台支付工具或費率檢視權限。</p>";
+      return;
+    }
+    if (!app.canPlatform("fees","view")) {
+      const list = app.data.paymentTools.filter(t => (!paymentPlatform || t.platform === paymentPlatform) && matches(t.platform+" "+t.name));
+      renderList(el,{create:"",list,head:["第三方金流平台","支付工具","幣別","功能"],row:t => `<tr><td>${esc(t.platform)}</td><td>${esc(t.name)}</td><td>${esc(t.currency)}</td><td>${app.canPlatform("payments","edit") ? button("編輯工具資料","tool-metadata",`data-id="${esc(t.id)}"`) : "唯讀"}</td></tr>`});
       return;
     }
 
@@ -875,7 +884,7 @@
       );
 
     renderList(el, {
-      create: button("新增", "new-payment", "", "success"),
+      create: app.canPlatform("payments","create") && app.canPlatform("fees","edit") ? button("新增", "new-payment", "", "success") : "",
       list,
       head: [
         "第三方金流平台",
@@ -999,12 +1008,12 @@
   }
 
   function feeEditor(key, versionId = "") {
-    if (!app.user.system || (key && !app.feeCan(key, "edit")))
-      return toast("僅系統管理員可設定支付工具");
+    if (!(key ? app.canPlatform("payments","edit") || app.canPlatform("fees","edit") : app.canPlatform("payments","create") && app.canPlatform("fees","edit")))
+      return toast("沒有平台支付工具或費率編輯權限");
 
     const version =
       key &&
-      (app.feeVersions("global", key).find((v) => v.id === versionId) ||
+      ((app.canPlatform("fees","view") ? app.feeVersions("global", key) : []).find((v) => v.id === versionId) ||
         app.activeFeeVersion("global", key));
     const pending =
       version &&
@@ -1019,6 +1028,17 @@
       paymentFormHtml({ key, version, pending, tool }),
       closePayment,
     );
+    if (key && !app.canPlatform("fees","edit")) {
+      const form = dialog.querySelector("form");
+      form.dataset.metadataOnly = "true";
+      for (const name of ["rate","effectiveAt"]) {
+        const input = form.elements[name];
+        if (input) { input.required = false; input.disabled = true; input.closest("label").hidden = true; }
+      }
+    }
+    if (key && !app.canPlatform("payments","edit")) {
+      for (const name of ["platform","name","code","currency","note"]) dialog.querySelector("form").elements[name].disabled = true;
+    }
     dialog.showModal();
   }
 
@@ -1087,7 +1107,7 @@
         ? "全站所有商店的預設費率；商店可自訂，專案預設繼承商店。"
         : `所有支付工具以整組版本生效。選擇繼承的工具會隨${upperLabel}費率連動，自訂值則保持不變。新增支付工具自動繼承。`;
     const metaButton =
-      scope === "global" && !readonly
+      scope === "global" && !readonly && app.canPlatform("payments","edit")
         ? `<div class="fee-tool-meta">${button("編輯工具資料", "fee-metadata", `data-id="${esc(target)}"`)}</div>`
         : "";
 
@@ -1422,7 +1442,7 @@
       const entry = selected?.entries[t.id];
       const parent = app.resolveFee(t.id, {...parentFeeOptions(scope,target), at: readonly ? selected.effectiveAt : start});
       const fee = entry?.mode === "custom" ? entry.fee : parent.fee;
-      return `<tr><td>${esc(t.name)}</td><td><input type="checkbox" data-switch name="enabled-${esc(t.id)}" aria-label="${esc(t.name)}啟用" ${(entry?.mode === "custom" ? entry.enabled !== false : parent.enabled !== false) ? "checked" : ""} ${fixed ? "disabled" : ""}></td><td><div class="fee-value"><input name="fee-${esc(t.id)}" aria-label="${esc(t.name)}手續費率" type="number" min="0" ${t.unit === "%" ? 'max="100"' : ""} step="0.000001" required value="${esc(fee ?? "")}" ${fixed ? "disabled" : ""}><span>${esc(t.unit)}</span></div></td></tr>`;
+      return `<tr><td>${esc(t.name)}</td><td><input type="checkbox" data-switch name="enabled-${esc(t.id)}" aria-label="${esc(t.name)}啟用" ${(entry?.mode === "custom" ? entry.enabled !== false : parent.enabled !== false) ? "checked" : ""} ${fixed ? "disabled" : ""}></td><td><select name="mode-${esc(t.id)}" aria-label="${esc(t.name)}設定方式" ${fixed ? "disabled" : ""}>${options([["inherit","繼承"],["custom","自訂"]],entry?.mode || "inherit")}</select><small>${feeText(parent)} ? ${feeSource(parent)}</small><div class="fee-value"><input name="fee-${esc(t.id)}" aria-label="${esc(t.name)}手續費率" type="number" min="0" ${t.unit === "%" ? 'max="100"' : ""} step="0.000001" required value="${esc(fee ?? "")}" ${fixed ? "disabled" : ""}><span>${esc(t.unit)}</span></div></td></tr>`;
     }).join("");
     const dialog = createDialog("fee-schedule-dialog", "fee-schedule-title", `<h2 id="fee-schedule-title">${title}</h2><form id="store-fee-modal-form"><div class="sys-payment-fields store-fee-dates"><label><span>狀態</span><div><input type="checkbox" data-switch name="versionEnabled" aria-label="費率版本狀態" ${(versionId ? selected?.enabled !== false : true) ? "checked" : ""} ${statusFixed ? "disabled" : ""}></div></label><label><span><em>*</em> 手續費率開始時間</span><input name="effectiveAt" aria-label="手續費率開始時間" type="datetime-local" step="1" required value="${feeDate(start).replace(" ","T")}" ${fixed ? "disabled" : ""}></label><label><span>手續費率結束時間</span><div class="store-fee-end-controls"><input name="endsAt" aria-label="手續費率結束時間" type="datetime-local" step="1" value="${end ? feeDate(end).replace(" ","T") : ""}" ${endFixed ? "disabled" : ""}>${endFixed ? "" : button("無期限","store-fee-unlimited")}</div></label></div><div class="store-fee-settings-row"><span class="store-fee-settings-label">設定費率</span><div class="store-fee-settings-content">${table(["支付工具","啟用","手續費率"],rows,"store-fee-modal-table")}</div></div>${selected?.endChanges?.length ? `<div class="store-fee-status-history">${selected.endChanges.map(change=>`<p>結束時間：${change.from ? feeDate(change.from) : "無期限"} → ${change.to ? feeDate(change.to) : "無期限"} · ${esc(change.by)} · ${feeDate(change.at)}</p>`).join("")}</div>` : ""}${selected?.statusChanges?.length ? `<div class="store-fee-status-history">${selected.statusChanges.map(change => `<p>${change.enabled ? "啟用" : "停用"}：${esc(change.by)} · ${feeDate(change.at)}</p>`).join("")}</div>` : ""}<p class="sys-error" role="alert"></p><div class="sys-modal-actions">${readonly ? "" : button("取消","fee-close")}<button type="${readonly ? "button" : "submit"}" ${readonly ? 'data-action="fee-close"' : ""} class="btn primary">確定</button></div></form>`, closeFeeSchedule);
     const form = dialog.querySelector("form");
@@ -1433,12 +1453,12 @@
     });
     const syncToolFeeDisabled = () => {
       for (const tool of tools) {
-        form.elements[`fee-${tool.id}`].disabled = fixed || !form.elements[`enabled-${tool.id}`].checked;
+        form.elements[`fee-${tool.id}`].disabled = fixed || form.elements[`mode-${tool.id}`].value === "inherit" || !form.elements[`enabled-${tool.id}`].checked;
       }
     };
     syncToolFeeDisabled();
     form.addEventListener("change", event => {
-      if (event.target.name?.startsWith("enabled-")) syncToolFeeDisabled();
+      syncToolFeeDisabled();
     });
     form.addEventListener("submit", e => {
       e.preventDefault();
@@ -1447,7 +1467,7 @@
         try {
           if (locked) commitFeeChange(() => app.updateStoreFeeControls(target,versionId,{enabled:form.elements.versionEnabled.checked,...(state === "生效中" ? {endsAt:form.elements.endsAt.value || null} : {})},new Date(),scope));
           else {
-            const entries = Object.fromEntries(tools.map(t => [t.id,{mode:"custom",fee:form.elements[`fee-${t.id}`].value,enabled:form.elements[`enabled-${t.id}`].checked}]));
+            const entries = Object.fromEntries(tools.map(t => [t.id,{mode:form.elements[`mode-${t.id}`].value,fee:form.elements[`fee-${t.id}`].value,enabled:form.elements[`enabled-${t.id}`].checked}]));
             commitFeeChange(() => app.saveFeeVersion(scope,target,{id:editing ? versionId : undefined, enabled:form.elements.versionEnabled.checked, effectiveAt:form.elements.effectiveAt.value, endsAt:form.elements.endsAt.value || undefined, entries}));
           }
           if (!versionId) feePage = 1;
@@ -1468,7 +1488,7 @@
   // --- 14-4. 進入點 ---
   function feeScheduleEditor(scope, target, versionId = "", readonly = false) {
     try {
-      app.assertFeeScope(scope, target);
+      if (readonly) { if (!(scope === "global" ? app.canPlatform("fees","view") : app.allowed(scope,target,"fees","view"))) throw Error("沒有目標範圍的費率檢視權限"); } else app.assertFeeScope(scope, target);
     } catch (error) {
       return toast(error.message);
     }
@@ -1536,6 +1556,7 @@
   }
 
   const CHANGE_HANDLERS = {
+    "existing-target-store": t => userEditor(undefined,"existing",t.value),
     "sys-store": (t) => {
       if (route === "stores") {
         storeFilter = validStoreOrEmpty(t.value);
@@ -1544,12 +1565,10 @@
         return;
       }
       if (route === "users") {
-        userStore = t.value;
+        userStore = validStoreOrEmpty(t.value);
         userProject = "";
-        if (t.value) app.switchStore(t.value);
-      } else app.switchStore(t.value);
+      }
       resetListState();
-      persist();
       render();
     },
 
@@ -1562,10 +1581,8 @@
     },
 
     "sys-role-store": (t) => {
-      roleStore = t.value;
-      if (t.value) app.switchStore(t.value);
+      roleStore = validStoreOrEmpty(t.value);
       resetListState();
-      persist();
       render();
     },
 
@@ -1671,9 +1688,12 @@
     // 支付工具
     "fee-edit": (b, e) => {
       e.preventDefault();
-      feeEditor(b.dataset.key, b.dataset.version);
+      if (app.canPlatform("fees","edit") && !app.canPlatform("payments","edit")) feeScheduleEditor("global",b.dataset.key);
+      else if (app.canPlatform("payments","edit")) feeEditor(b.dataset.key, b.dataset.version);
+      else if (app.canPlatform("fees","view")) feeScheduleEditor("global",b.dataset.key,b.dataset.version,true);
     },
     "new-payment": () => feeEditor(),
+    "tool-metadata": b => feeEditor(b.dataset.id),
     "close-payment": () => closePayment(),
     "payment-history": (b) => {
       closePayment();
@@ -1730,7 +1750,7 @@
       const grants = Object.fromEntries(
         data.getAll("grant").map((p) => [p, data.get("role-" + p)]),
       );
-      app.saveUser({
+      scoped(data.get("target-store")).saveUser({
         mode: form.dataset.mode,
         id:
           form.dataset.mode === "existing"
@@ -1749,10 +1769,11 @@
       commitFeeChange(() =>
         app.savePaymentTool({
           id: key,
+          metadataOnly: form.dataset.metadataOnly === "true",
           platform: data.get("platform"),
           name: data.get("name"),
           code: data.get("code"),
-          fee: data.get("rate"),
+          fee: form.dataset.metadataOnly === "true" ? app.resolveFee(key).fee : data.get("rate"),
           // 編輯時計價單位 disabled，需從既有資料取
           unit: key
             ? app.data.paymentTools.find((t) => t.id === key).unit
@@ -1799,7 +1820,7 @@
   render();
   if (route === "stores" && new URLSearchParams(location.search).get("store") === "fee-demo") storeFeePage("fee-demo");
   if (storageIssue) toast("無法讀取已儲存資料");
-  persist();
+  if (!storageIssue && app.active) persist();
 
   // 排程費率到時間自動生效 → 重新渲染
   const activeFeeVersionIds = () =>

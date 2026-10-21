@@ -42,11 +42,11 @@
     "invoiceStatus", // 13  發票狀態
   ];
 
-  const order = (fields) => ORDER_COLUMNS.map((column) => fields[column]);
+  const order = (fields) => [...ORDER_COLUMNS.map((column) => fields[column]), fields.projectId];
 
   window.transactionOrders = [
     order({
-      orderNo: "202609080050001",
+      projectId: "A", orderNo: "202609080050001",
       tradeNo: "26090810132813893",
       itemName: "【塩田千春…",
       store: UNIT,
@@ -62,7 +62,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202610080050006",
+      projectId: "B", orderNo: "202610080050006",
       tradeNo: "2026100802386970310",
       itemName: "9 元",
       store: UNIT,
@@ -78,7 +78,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508080050001",
+      projectId: "A", orderNo: "202508080050001",
       tradeNo: "25080815181575191",
       itemName: "Lady M",
       store: UNIT,
@@ -94,7 +94,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050008",
+      projectId: "B", orderNo: "202508040050008",
       tradeNo: "25080412320764603",
       itemName: "陽光場",
       store: UNIT,
@@ -110,7 +110,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050007",
+      projectId: "A", orderNo: "202508040050007",
       tradeNo: "2025080402297268810",
       itemName: "陽光場",
       store: UNIT,
@@ -126,7 +126,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050006",
+      projectId: "B", orderNo: "202508040050006",
       tradeNo: "25080412300264600",
       itemName: "陽光場",
       store: UNIT,
@@ -142,7 +142,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050005",
+      projectId: "A", orderNo: "202508040050005",
       tradeNo: "25080412280664599",
       itemName: "陽光場",
       store: UNIT,
@@ -158,7 +158,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050004",
+      projectId: "B", orderNo: "202508040050004",
       tradeNo: "25080412243664594",
       itemName: "陽光場",
       store: UNIT,
@@ -174,7 +174,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050002",
+      projectId: "A", orderNo: "202508040050002",
       tradeNo: "25080412235064593",
       itemName: "陽光場",
       store: UNIT,
@@ -190,7 +190,7 @@
       invoiceStatus: STATUS.INVOICED,
     }),
     order({
-      orderNo: "202508040050003",
+      projectId: "B", orderNo: "202508040050003",
       tradeNo: "25080412234264592",
       itemName: "陽光場",
       store: UNIT,
@@ -209,7 +209,7 @@
 
   // Reference order supplied for the order-detail demo.
   window.transactionOrders.push(order({
-    orderNo:"202610080050001", tradeNo:"26100815345560689", itemName:"(應稅) 不定額商品",
+    projectId:"A", orderNo:"202610080050001", tradeNo:"26100815345560689", itemName:"(應稅) 不定額商品",
     store:UNIT, department:UNIT, cardType:CARD.DOMESTIC, paymentMethod:PAYMENT.CREDIT_CARD,
     amount:"1008", createdAt:"2026-10-08 15:34:55", paidAt:"2026-10-08 15:34:55",
     status:STATUS.INVOICED, taxType:TAXABLE, invoiceNo:"IJ00000004", invoiceStatus:STATUS.INVOICED,

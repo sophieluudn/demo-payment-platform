@@ -87,7 +87,7 @@
 
   // 建立虛擬交易與退款數據
   const buildRecords = (statement) => {
-    return (window.transactionOrders || []).map((order, index) => {
+    return (window.transactionOrders || []).filter(order => statement.projectIds?.includes(order[14]) && PaymentAccess.allows(order,"statements")).map((order, index) => {
       const amount = Number(order[7]);
       const fee = window.TransactionFees?.read(order[0])?.feeAmount ?? round(amount * 0.02);
       const isTaxable = order[11] === "應稅";
@@ -107,8 +107,8 @@
         refundTax,
         date: `${statement.start} 12:30:${String(index).padStart(2, "0")}`,
         refundDate: `${statement.end} 15:40:${String(index).padStart(2, "0")}`,
-        store: statement.stores[index % statement.stores.length],
-        project: statement.projects[index % statement.projects.length],
+        store: PaymentAccess.model().data.stores.find(s => s.id === PaymentAccess.model().data.projects.find(p => p.id === order[14])?.store)?.name,
+        project: PaymentAccess.model().data.projects.find(p => p.id === order[14])?.name,
         product: statement.products[0] === "全部商品"
           ? order[2]
           : statement.products[index % statement.products.length],
@@ -244,6 +244,8 @@
 
   // ───────────────────────── 5. CSV 匯出邏輯 ─────────────────────────
   const exportToCSV = () => {
+    if (!PaymentAccess.statementAllowed(currentStatement,"export")) return;
+    if (!rawRecords.every(record => PaymentAccess.allows(record.order,"statements","export"))) return;
     const footerCells = [...tfoot.querySelectorAll("tr td")].map((td) => td.textContent);
 
     const sanitizeField = (value) => {
@@ -301,7 +303,9 @@
 
   // 全域開啟函式
   window.openStatementReport = (entry) => {
+    if (!PaymentAccess.statementAllowed(entry)) return;
     currentStatement = entry;
+    dialog.querySelector(".report-export").hidden = !PaymentAccess.statementAllowed(entry,"export");
     activeTabIndex = 0;
     rawRecords = buildRecords(entry);
     render();

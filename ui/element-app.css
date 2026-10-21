@@ -61,7 +61,7 @@ a:active {
 }
 
 .platform-brand {
-  height: 64px;
+  height: 72px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -69,13 +69,20 @@ a:active {
   color: #fff;
   text-decoration: none;
   white-space: nowrap;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
 }
 
-.platform-brand .el-icon {
-  font-size: 22px;
-  flex-shrink: 0;
+.platform-brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.4;
+}
+
+.platform-brand-demo {
+  font-size: inherit;
+  font-weight: 400;
 }
 
 .platform-menu {
@@ -1202,6 +1209,11 @@ a:active {
   background: #304156;
 }
 
+.platform-home .platform-brand,
+.platform-layout:has(.ep-order-detail) .platform-brand {
+  padding: 0 16px;
+}
+
 .platform-home .platform-menu:not(.el-menu--collapse) {
   width: 210px;
 }
@@ -1664,3 +1676,16 @@ body .el-button > span {
   display:inline-flex; align-items:center; justify-content:center;
 }
 .el-dialog :is(.ep-user-grant-add,.ep-user-grant-remove) > span { display:none; }
+.el-dialog .ep-user-grant-remove.ep-grant-revoke-label {
+  width: auto;
+  min-width: 108px;
+  padding: 0 12px;
+  border-radius: 4px;
+}
+.el-dialog .ep-user-grant-remove.ep-grant-revoke-label > span { display:inline; }
+@media (width >=768px) {
+  .ep-user-grant-saved:has(.ep-grant-revoke-label) { grid-template-columns:repeat(3,minmax(0,1fr)) 108px; }
+}
+@media (width <=767px) {
+  .el-dialog .ep-role-setting-row.ep-role-permissions-row { grid-template-columns:minmax(0,1fr); }
+}

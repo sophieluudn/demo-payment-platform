@@ -145,11 +145,10 @@ test("manager-only identity, partial manager editing, and own-grant changes are 
   );
   d.identity = "partial";
   d.normalize();
-  assert.equal(d.canEditUser("multi"), false);
+  assert.equal(d.canEditUser("multi"), true);
   assert.equal(d.canEditUser("charlie"), true);
-  assert.throws(() =>
-    d.saveUser({ mode: "edit", id: "multi", grants: { A: "viewer" } }),
-  );
+  d.saveUser({ mode: "edit", id: "multi", grants: { A: "viewer" } });
+  assert.equal(d.data.users.find(u => u.id === "multi").grants.B,"viewer");
   assert.throws(() =>
     d.saveUser({
       mode: "new",
@@ -159,7 +158,7 @@ test("manager-only identity, partial manager editing, and own-grant changes are 
     }),
   );
 });
-test("payment configuration is system-admin exclusive even with legacy or forged role permissions", () => {
+test("platform payment configuration requires platform scope, while project fees use project scope", () => {
   const d = new SystemManagement();
   d.setFee("credit-card", "3.5");
   assert.equal(d.data.fees["credit-card"], "3.5");
@@ -172,7 +171,7 @@ test("payment configuration is system-admin exclusive even with legacy or forged
     assert.equal(d.feeCan(key, "edit"), false);
     assert.throws(() => d.setFee(key, "4"));
   }
-  assert.equal(d.can("A", "fees", "edit"), false);
+  assert.equal(d.can("A", "fees", "edit"), true);
   assert.equal(d.can("A", "payments", "edit"), false);
   d.identity = "admin";
   d.normalize();
@@ -180,7 +179,7 @@ test("payment configuration is system-admin exclusive even with legacy or forged
     name: "Settings",
     permissions: { fees: ["edit"], users: ["view"] },
   });
-  assert.equal(r.permissions.fees, undefined);
+  assert.deepEqual(r.permissions.fees, ["create","edit"]);
   d.setFee("credit-card", "2.5");
   d.setFee("atm", "7");
   assert.throws(() => d.setFee("credit-card", "abc"));

@@ -281,8 +281,8 @@
 
     const actionCell = document.createElement("td");
     actionCell.innerHTML = `
-      <button type="button" class="btn primary">編輯</button>
-      <button type="button" class="btn danger">刪除</button><br>
+      <button data-permission-action="edit" type="button" class="btn primary">編輯</button>
+      <button data-permission-action="delete" type="button" class="btn danger">刪除</button><br>
       <button type="button" class="btn gray">付款連結管理</button>
     `;
     row.append(actionCell);

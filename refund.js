@@ -251,6 +251,7 @@ window.initializeRefund = (order) => {
 
   // 發票作廢 / 折讓處理
   const processInvoiceAction = () => {
+    PaymentAccess.assert(order,"transactions","refund");
     state.value = Number(input.value);
     state.processed = true;
     saveState();
@@ -307,6 +308,7 @@ window.initializeRefund = (order) => {
 
   // 退款處理
   const processRefundAction = () => {
+    PaymentAccess.assert(order,"transactions","refund");
     addHistoryRecord("取消交易處理中", `執行退款，金額 NT$${state.value}`);
 
     state.completed = true;
@@ -390,10 +392,12 @@ window.initializeRefund = (order) => {
 
     confirmationModal.close();
 
-    if (activeConfirmAction === "invoice") {
-      processInvoiceAction();
-    } else {
-      processRefundAction();
+    try {
+      if (activeConfirmAction === "invoice") processInvoiceAction();
+      else processRefundAction();
+    } catch (error) {
+      errorMsg.hidden = false;
+      errorMsg.textContent = error.message;
     }
 
     isBusy = false;
@@ -415,7 +419,12 @@ window.initializeRefund = (order) => {
     if (!noticeEl.hidden) document.body.append(noticeEl);
   });
 
+  trigger.dataset.permissionFeature = "transactions";
+  trigger.dataset.permissionAction = "refund";
+  trigger.dataset.projectId = order[14];
+  trigger.hidden = !PaymentAccess.allows(order,"transactions","refund");
   trigger.addEventListener("click", () => {
+    if (!PaymentAccess.allows(order,"transactions","refund")) return;
     if (state.completed) return;
     renderUI();
     dialog.showModal();

@@ -66,6 +66,7 @@
       </div>
 
       <div class="user-create-actions">
+        ${editing ? "" : '<button type="button" class="btn plain user-existing">加入既有帳號</button>'}
         <button type="button" class="btn plain user-create-cancel">取消</button>
         <button type="submit" class="btn primary user-create-save">確定</button>
       </div>
@@ -100,6 +101,7 @@
 
     // ── 狀態：目前已加入的授權（複製一份，避免改到外部傳入的資料） ──
     let grants = (config.grants || []).map((grant) => ({ ...grant }));
+    const revoked = [];
 
     const showError = (message) => {
       errorBox.hidden = false;
@@ -120,31 +122,24 @@
 
     /** 可選的角色：必須在候選專案所屬的「每一間」商店都存在 */
     const getAvailableRoles = () => {
-      const storeIds = [
-        ...new Set(getCandidateProjects().map((item) => item.store)),
-      ];
-      if (!storeIds.length) return [];
-
-      return config
-        .roles(storeIds[0])
-        .filter((candidate) =>
-          storeIds.every((id) =>
-            config.roles(id).some((item) => item.id === candidate.id),
-          ),
-        );
+      if (storeSelect.value === "__platform__") return config.platformRoles?.() || [];
+      if (projectSelect.value === "__store__") return config.storeRoles?.(storeSelect.value) || [];
+      const targets = getCandidateProjects().filter(p => !projectSelect.value || projectSelect.value === ALL || p.id === projectSelect.value);
+      if (!targets.length) return [];
+      return config.roles(targets[0].store, targets[0].id).filter(r => targets.every(p => config.roles(p.store,p.id).some(candidate => candidate.id === r.id)));
     };
 
     // ───────────── 授權列表的顯示文字 ─────────────
 
     const getStoreLabel = (grant) =>
-      grant.batchStore === ALL
+      grant.project === "__platform__" ? "全部商店／平台" : grant.batchStore === ALL
         ? "全部商店"
         : config.storeName?.(grant.store) ||
           config.stores.find((item) => item.id === grant.store)?.name;
 
     const getProjectLabel = (grant, groupSize) =>
-      grant.batchId
-        ? `全部專案（${groupSize}）`
+      grant.project === "__platform__" ? "全域授權" : grant.project === "__store__" ? "整店授權（含未來新增專案）" : grant.batchId
+        ? `指定專案（目前 ${groupSize} 個）`
         : config.projectName?.(grant.project) ||
           config.projects.find((item) => item.id === grant.project)?.name;
 
@@ -161,10 +156,10 @@
       saveButton.disabled = false;
       [storeSelect, projectSelect, roleSelect].forEach((select, index) => {
         const labels = ["商店", "專案", "角色"];
-        select.dataset.validationError = !grants.length && !select.value
+        select.dataset.validationError = !editing && !grants.length && !select.value
           ? `請選擇${labels[index]}` : "";
       });
-      if (!grants.length && storeSelect.value && projectSelect.value && roleSelect.value)
+      if (!editing && !grants.length && storeSelect.value && projectSelect.value && roleSelect.value)
         projectSelect.dataset.validationError = "請按＋將所選專案加入管理專案";
     };
 
@@ -179,7 +174,7 @@
     const groupGrants = () => {
       const groups = new Map();
       grants.forEach((grant) => {
-        const key = grant.batchId || grant.project;
+        const key = grant.batchId || `${grant.store}:${grant.project}:${grant.role}`;
         if (!groups.has(key)) groups.set(key, []);
         groups.get(key).push(grant);
       });
@@ -205,11 +200,13 @@
 
       const removeButton = document.createElement("button");
       removeButton.type = "button";
-      removeButton.className = "user-grant-remove danger";
-      removeButton.textContent = "移除";
+      removeButton.className = "user-grant-remove grant-revoke-label danger";
+      removeButton.title = "撤銷此授權，按確定後生效";
+      removeButton.textContent = "撤銷授權";
       removeButton.setAttribute("aria-label", "移除授權");
       removeButton.disabled = items.some((item) => item.locked); // 鎖定的授權不能移除
       removeButton.addEventListener("click", () => {
+        revoked.push(...items.filter(item => item.original));
         grants = grants.filter((item) => !items.includes(item));
         renderGrants();
       });
@@ -221,6 +218,11 @@
     const renderGrants = () => {
       grantList.replaceChildren();
       groupGrants().forEach((items) => grantList.append(createGrantRow(items)));
+      if (revoked.length) {
+        const note = document.createElement("p"); note.setAttribute("role","status");
+        note.textContent = `將撤銷 ${revoked.length} 項授權，按「確定」後生效；其他授權保持原樣。`;
+        grantList.append(note);
+      }
       updateButtonStates();
     };
 
@@ -230,6 +232,12 @@
       if (addButton.disabled) return;
 
       const roleId = roleSelect.value;
+      if (["__store__","__platform__"].includes(projectSelect.value)) {
+        if (!getAvailableRoles().some(r => r.id === roleId)) return showError(ERROR_MESSAGES.NO_TARGET);
+        if (grants.some(g => g.store === storeSelect.value && g.project === projectSelect.value && (g.project !== "__platform__" || g.role === roleId))) return showError(ERROR_MESSAGES.ROLE_CONFLICT);
+        grants.push({store:storeSelect.value,project:projectSelect.value,role:roleId});
+        hideError(); renderGrants(); return;
+      }
       const targets = getCandidateProjects().filter(
         (item) => projectSelect.value === ALL || item.id === projectSelect.value,
       );
@@ -303,17 +311,18 @@
     };
 
     const closeDialog = () => dialog.close();
+    dialog.querySelector(".user-existing")?.addEventListener("click",() => { closeDialog(); config.onExisting?.(); });
 
     const handleSubmit = (event) => {
       event.preventDefault();
       form.dataset.validationSubmitted = "true";
       updateButtonStates();
-      if (!form.checkValidity() || !grants.length) return;
+      if (!form.checkValidity() || (!grants.length && !editing)) return;
 
       try {
         const rolesByProject = new Map();
         for (const grant of grants) {
-          const key = JSON.stringify([grant.store, grant.project]);
+          const key = JSON.stringify([grant.store, grant.project,grant.project === "__platform__" ? grant.role : ""]);
           if (rolesByProject.has(key) && rolesByProject.get(key) !== grant.role) {
             roleSelect.dataset.validationError = "同一商店的同一專案只能設定一個角色權限";
             return;
@@ -325,6 +334,7 @@
           login: form.elements.login.value.trim(),
           enabled: statusSwitch.getAttribute("aria-checked") === "true",
           grants,
+          revoked,
           grantBatches: buildGrantBatches(),
         });
         closeDialog();
@@ -336,10 +346,10 @@
     // ───────────── 初始化 ─────────────
 
     // 商店下拉選單
-    storeSelect.add(new Option("全部商店", ALL));
     config.stores.forEach((item) =>
       storeSelect.add(new Option(item.name, item.id)),
     );
+    if (config.platformRoles?.().length) storeSelect.add(new Option("全域授權（平台）","__platform__"));
 
     // 編輯時：把「全部專案」授權標記回原本的批次
     // （只有當批次內的專案與角色都還完整存在時才標記）
@@ -368,6 +378,13 @@
       "aria-checked",
       String(config.user?.enabled !== false),
     );
+    if (editing && config.canChangeState === false) {
+      statusSwitch.disabled = true;
+      const note = document.createElement("p");
+      note.className = "user-grant-hint";
+      note.textContent = "帳號狀態影響全部授權，須具備所有授權範圍的使用者管理權限才能變更。";
+      statusSwitch.after(note);
+    }
 
     // ───────────── 事件綁定 ─────────────
 
@@ -381,13 +398,15 @@
     // 選了商店 → 更新專案與角色的選項
     storeSelect.addEventListener("change", () => {
       fillSelect(projectSelect, "請選擇專案", [
-        { id: ALL, name: "全部專案" },
+        ...(storeSelect.value === "__platform__" ? [{id:"__platform__",name:"全域授權（含全部商店及專案）"}] : []),
+        ...(config.storeRoles?.(storeSelect.value).length ? [{id:"__store__",name:"整店授權（含未來新增專案）"}] : []),
+        { id: ALL, name: "指定目前全部專案（不含未來專案）" },
         ...getCandidateProjects(),
       ]);
       fillSelect(roleSelect, "請選擇角色", getAvailableRoles());
       updateButtonStates();
     });
-    projectSelect.addEventListener("change", updateButtonStates);
+    projectSelect.addEventListener("change", () => { fillSelect(roleSelect,"請選擇角色",getAvailableRoles()); updateButtonStates(); });
     roleSelect.addEventListener("change", updateButtonStates);
     form.addEventListener("input", updateButtonStates);
 
@@ -406,6 +425,8 @@
     form.addEventListener("submit", handleSubmit);
 
     // ───────────── 顯示 ─────────────
+    storeSelect.value = config.defaultStore || "";
+    if (storeSelect.value) storeSelect.dispatchEvent(new Event("change"));
     renderGrants();
     dialog.showModal();
     document.body.classList.add("user-create-open");

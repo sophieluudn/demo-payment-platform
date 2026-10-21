@@ -21,16 +21,13 @@ createApp({
     let model;
     let saved;
     function load() {
-      saved = JSON.parse(
-        localStorage.getItem(STORAGE) ||
-          localStorage.getItem("payment-system-demo-v1") ||
-          "null",
-      );
-      if (saved && !isSavedData(saved.data))
+      const raw = localStorage.getItem(STORAGE) ?? localStorage.getItem("payment-system-demo-v1");
+      saved = raw == null ? null : JSON.parse(raw);
+      if (raw != null && !isSavedData(saved?.data))
         throw Error("無法讀取商店資料，請確認瀏覽器儲存資料後重試。");
       model = new Management(
         migrate(saved?.data || seed()),
-        saved?.currentUserId || "admin",
+        saved ? (saved.currentUserId ?? "invalid") : "admin",
         saved?.store,
       );
     }

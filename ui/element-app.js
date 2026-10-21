@@ -109,6 +109,7 @@ const keyFor = (node) => {
   if (!identities.has(node)) identities.set(node, ++identity);
   return identities.get(node);
 };
+
 function refresh() {
   if (scheduled) return;
   scheduled = true;
@@ -117,10 +118,12 @@ function refresh() {
     version.value++;
   });
 }
+
 function emit(node, type) {
   node.dispatchEvent(new Event(type, { bubbles: true }));
   refresh();
 }
+
 function setValue(node, value, change = true) {
   node.value = value ?? "";
   emit(node, "input");
@@ -132,6 +135,7 @@ function activate(node, event) {
   node.click();
   refresh();
 }
+
 const originalFocus = HTMLElement.prototype.focus;
 HTMLElement.prototype.focus = function (...args) {
   if (!source.contains(this)) return originalFocus.apply(this, args);
@@ -144,12 +148,14 @@ HTMLElement.prototype.focus = function (...args) {
   };
   queueMicrotask(() => nextTick(focus));
 };
+
 const returnFocus = new WeakMap();
 HTMLDialogElement.prototype.showModal = function () {
   returnFocus.set(this, document.activeElement);
   this.setAttribute("open", "");
   refresh();
 };
+
 HTMLDialogElement.prototype.show = HTMLDialogElement.prototype.showModal;
 HTMLDialogElement.prototype.close = function (value = "") {
   this.returnValue = value;
@@ -158,11 +164,14 @@ HTMLDialogElement.prototype.close = function (value = "") {
   refresh();
   nextTick(() => returnFocus.get(this)?.focus?.());
 };
+
 function cancelDialog(dialog) {
   if (dialog.dispatchEvent(new Event("cancel", { cancelable: true })))
     dialog.close();
   refresh();
 }
+
+
 // Property writes (unlike attribute writes) aren't delivered by MutationObserver.
 for (const [prototype, properties] of [
   [HTMLInputElement.prototype, ["value", "checked", "indeterminate"]],
@@ -637,7 +646,7 @@ function renderButton(node) {
         ? "primary"
         : "default";
   const grantAction = node.matches(".user-grant-add,.user-grant-remove");
-  const hasText = !grantAction && text.length > 0 && text !== "+";
+  const hasText = (!grantAction || node.classList.contains("grant-revoke-label")) && text.length > 0 && text !== "+";
   const isPurePlusIcon = text === "+";
   const buttonIcon = node.matches(".user-grant-remove") ? Delete : grantAction || isPurePlusIcon ? Plus : undefined;
   const button = h(
@@ -645,7 +654,7 @@ function renderButton(node) {
     {
       ...propsFor(node),
       type,
-      circle: grantAction,
+      circle: grantAction && !node.classList.contains("grant-revoke-label"),
       disabled: node.disabled,
       size: node.closest("td") ? "default" : "large",
       icon: buttonIcon,
@@ -1353,16 +1362,18 @@ const App = {
               class: "platform-sidebar",
             },
             () => [
-              !isHome && !main.matches(".order-detail") && h(
+              h(
                 "a",
                 {
                   href: "index.html",
                   class: "platform-brand",
-                  "aria-label": "行動支付支援平台首頁",
+                  "aria-label": "行動支付支援平台 Demo 首頁",
                 },
                 [
-                  icon(Goods),
-                  !collapsed.value && h("span", "行動支付支援平台"),
+                  !collapsed.value && h("span", { class: "platform-brand-text" }, [
+                    h("span", "行動支付支援平台"),
+                    h("span", { class: "platform-brand-demo" }, "Demo"),
+                  ]),
                 ],
               ),
               h(

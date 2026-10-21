@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
-    "test": "node --test tests/system-model.test.js tests/role-scopes.test.js tests/fee-schedules.test.js",
+    "test": "node --test tests/system-model.test.js tests/role-scopes.test.js tests/fee-schedules.test.js tests/authorization.test.js",
     "start": "node server.js",
     "test:browser": "playwright test",
     "build": "node build-ui.js",

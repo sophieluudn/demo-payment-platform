@@ -19,7 +19,7 @@ test("menu permissions survive migration and revoked permissions are not restore
   migrate(data);
   assert.deepEqual(legacy.permissions.tags, []);
   assert.deepEqual(legacy.permissions.roles, []);
-  assert.deepEqual(Object.keys(actions), ["transactions", "products", "tags", "reports", "statements", "users", "roles", "projects", "stores"]);
+  assert.deepEqual(Object.keys(actions), ["transactions", "products", "tags", "reports", "statements", "users", "roles", "projects", "stores", "payments", "fees"]);
   assert.equal(new SystemManagement(data, "charlie").can("A", "home", "view"), true);
   assert.equal(legacy.permissions.home, undefined);
 });
@@ -30,7 +30,7 @@ test("create and edit share permission while unrelated actions remain isolated",
   const role = admin.saveRole({name:"角色新增人員", store:"edu", permissions:{
     roles:["view", "create"], tags:["view", "edit"], statements:["view", "archive"],
   }});
-  data.users.push({id:"role-author", name:"新增人員", login:"role-author", grants:{A:role.id}});
+  data.users.push({id:"role-author", name:"新增人員", login:"role-author", grants:{}, storeGrants:{edu:role.id}});
   const author = new SystemManagement(data, "role-author", "edu");
   assert.equal(author.canManageRoles("edu", "create"), true);
   assert.equal(author.canManageRoles("edu", "edit"), true);
@@ -66,6 +66,7 @@ test("store roles allow distinct names and same name in different stores", () =>
     admin.saveRole({ name: "專案管理員", store: "edu", permissions: {} }),
   );
   const manager = new SystemManagement(data, "big", "edu");
+  admin.saveUser({mode:"edit",id:"big",storeGrants:{edu:"large"}});
   manager.saveRole({
     name: "教育自訂角色",
     store: "edu",

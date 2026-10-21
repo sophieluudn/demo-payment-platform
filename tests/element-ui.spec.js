@@ -23,6 +23,7 @@ for (const route of ["stores", "projects"]) {
     await app(page).getByRole("button", {name:"新增手續費率",exact:true}).click();
     let dialog = page.getByRole("dialog", {name:"新增手續費率",exact:true});
     let row = dialog.locator(".el-table__body tr").first();
+    await choose(page,row.locator(".el-select"),"自訂");
     const toggle = row.locator(".el-switch");
     if (await row.getByRole("switch").getAttribute("aria-checked") === "false") await toggle.click();
     await expect(row.getByRole("spinbutton")).toBeEnabled();
@@ -79,11 +80,11 @@ test("user validation appears only after confirmation and clears when corrected"
   await name.focus();
   await expect(dialog.locator(".platform-field-error")).toHaveCount(0);
   await dialog.getByRole("button", { name: "確定", exact: true }).click();
-  await expect(dialog.locator(".platform-field-error")).toHaveCount(5);
+  await expect(dialog.locator(".platform-field-error")).toHaveCount(4);
   await expect(dialog).toContainText("請輸入有效的電子郵件地址");
   await name.fill("驗證測試");
   await email.fill("validation@example.com");
-  await expect(dialog.locator(".platform-field-error")).toHaveCount(3);
+  await expect(dialog.locator(".platform-field-error")).toHaveCount(2);
   await dialog.getByRole("button", { name: "取消", exact: true }).click();
   await app(page).getByRole("button", { name: "新增", exact: true }).click();
   await expect(dialog.locator(".platform-field-error")).toHaveCount(0);
@@ -224,7 +225,7 @@ test("all routes render Element Plus without runtime errors at desktop and mobil
   expect(errors).toEqual([]);
 });
 
-test("project and store filters default to all for admin and filter actual rows", async ({
+test("project and store filters default to the entered store for admin and filter actual rows", async ({
   page,
 }) => {
   for (const route of ["projects", "stores"]) {
@@ -233,13 +234,13 @@ test("project and store filters default to all for admin and filter actual rows"
       page,
       route === "projects" ? "sys-project-store" : "sys-store",
     );
-    await expect(target).toContainText("全部商店");
+    await expect(target).toContainText("教育事業部");
     await choose(page, target, "U 好學");
     await expect(app(page).locator(".el-table__body tbody tr")).toHaveCount(1);
     await app(page).getByRole("button", { name: "清除", exact: true }).click();
-    await expect(target).toContainText("全部商店");
+    await expect(target).toContainText("教育事業部");
     await expect(app(page).locator(".el-table__body tbody tr")).toHaveCount(
-      route === "projects" ? 3 : 2,
+      route === "projects" ? 2 : 1,
     );
   }
 });
@@ -248,6 +249,7 @@ test("pagination changes page size and page using controller data", async ({
   page,
 }) => {
   await page.goto("/projects.html");
+  await choose(page,field(page,"sys-project-store"),"全部商店");
   await choose(page, app(page).locator(".el-pagination .el-select"), "2項/頁");
   await expect(app(page).locator(".el-table__body tr")).toHaveCount(2);
   await app(page)
@@ -435,65 +437,36 @@ test("payment fee versions retain history when revised through the edit modal", 
   expect(versions.filter((v) => !v.cancelledAt)).toHaveLength(2);
 });
 
-test("store and project batches inherit dynamically and preserve custom fees across reloads", async ({
-  page,
-}) => {
+test("store and project batches inherit dynamically and preserve custom fees across reloads", async ({page}) => {
+  await page.clock.setFixedTime(new Date("2026-10-19T04:00:00Z"));
   await page.goto("/stores.html");
-  await app(page)
-    .locator(".el-table__body tr")
-    .filter({ hasText: "教育事業部" })
-    .getByRole("button", { name: "費率設定", exact: true })
-    .click();
-  let dialog = page.getByRole("dialog", {
-    name: "費率設定：教育事業部",
-    exact: true,
-  });
-  let credit = dialog
-    .locator(".ep-fee-settings-table .el-table__body tr")
-    .filter({ hasText: "國內信用卡一次付清" });
-  await choose(page, credit.locator(".el-select"), "自訂");
+  await app(page).getByRole("button",{name:"\u7ba1\u7406\u624b\u7e8c\u8cbb",exact:true}).first().click();
+  await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
+  let dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
+  let credit = dialog.getByRole("row").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"});
+  await choose(page,credit.locator(".el-select"),"\u81ea\u8a02");
   await credit.getByRole("spinbutton").fill("2.5");
-  await dialog
-    .getByRole("button", { name: "儲存費率版本", exact: true })
-    .click();
-  await expect(dialog.locator(".ep-fee-history")).toContainText("目前生效");
+  await dialog.getByRole("button",{name:"\u78ba\u5b9a",exact:true}).click();
+  await expect(dialog).toBeHidden();
+  await page.clock.setFixedTime(new Date("2026-10-19T04:02:00Z"));
   await page.goto("/projects.html");
-  await app(page)
-    .locator(".el-table__body tr")
-    .filter({ hasText: "線上商城專案 A" })
-    .getByRole("button", { name: "費率設定", exact: true })
-    .click();
-  dialog = page.getByRole("dialog", {
-    name: "費率設定：線上商城專案 A",
-    exact: true,
-  });
-  credit = dialog
-    .locator(".ep-fee-settings-table .el-table__body tr")
-    .filter({ hasText: "國內信用卡一次付清" });
+  await app(page).getByRole("button",{name:"\u7ba1\u7406\u624b\u7e8c\u8cbb",exact:true}).first().click();
+  await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
+  dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
+  credit = dialog.getByRole("row").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"});
   await expect(credit).toContainText("2.5%");
-  await expect(credit).toContainText("商店自訂");
-  await choose(page, credit.locator(".el-select"), "自訂");
+  await expect(credit).toContainText("\u5546\u5e97\u81ea\u8a02");
+  await choose(page,credit.locator(".el-select"),"\u81ea\u8a02");
   await credit.getByRole("spinbutton").fill("3");
-  await dialog
-    .getByRole("button", { name: "儲存費率版本", exact: true })
-    .click();
+  await dialog.getByRole("button",{name:"\u78ba\u5b9a",exact:true}).click();
+  await expect(dialog).toBeHidden();
   await page.reload();
-  await app(page)
-    .locator(".el-table__body tr")
-    .filter({ hasText: "線上商城專案 A" })
-    .getByRole("button", { name: "費率設定", exact: true })
-    .click();
-  await expect(credit.getByRole("spinbutton")).toHaveValue("3");
-  const stored = await page.evaluate(
-    (key) => JSON.parse(localStorage.getItem(key)).data.feeVersions,
-    STORAGE,
-  );
-  expect(
-    stored.find((v) => v.scope === "project").entries["credit-card"],
-  ).toEqual({ mode: "custom", fee: "3" });
-  expect(
-    Object.keys(stored.find((v) => v.scope === "project").entries),
-  ).toHaveLength(11);
+  await app(page).getByRole("button",{name:"\u7ba1\u7406\u624b\u7e8c\u8cbb",exact:true}).first().click();
+  await app(page).getByRole("button",{name:"\u7de8\u8f2f",exact:true}).first().click();
+  dialog=page.getByRole("dialog",{name:"\u7de8\u8f2f\u624b\u7e8c\u8cbb\u7387",exact:true});
+  await expect(dialog.getByRole("row").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"}).getByRole("spinbutton")).toHaveValue("3");
+  const stored=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).data.feeVersions,STORAGE);
+  expect(stored.find(v=>v.scope==="project").entries["credit-card"]).toEqual({mode:"custom",fee:"3",enabled:true});
 });
 
 test("new payment tools appear in inherited store and project batches", async ({
@@ -531,16 +504,12 @@ test("new payment tools appear in inherited store and project batches", async ({
     await app(page)
       .locator(".el-table__body tr")
       .filter({ hasText: name })
-      .getByRole("button", { name: "費率設定", exact: true })
+      .getByRole("button", { name: "管理手續費", exact: true })
       .click();
-    dialog = page.getByRole("dialog", {
-      name: `費率設定：${name}`,
-      exact: true,
-    });
-    const tool = dialog
-      .locator(".ep-fee-settings-table .el-table__body tr")
-      .filter({ hasText: "街口支付" });
-    await expect(tool).toContainText(`繼承${upper}`);
+    await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
+    dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
+    const tool = dialog.getByRole("row").filter({hasText:"\u8857\u53e3\u652f\u4ed8"});
+    await expect(tool.locator(".el-select")).toContainText("\u7e7c\u627f");
     await expect(tool).toContainText("2.2%");
   }
 });
@@ -553,7 +522,7 @@ test("recorded transaction fee snapshots display the saved rate instead of the d
   await page.evaluate(() =>
     TransactionFees.record({
       id: "202610080050006",
-      projectId: "A",
+      projectId: "B",
       toolId: "line-pay",
       paidAt: "2026-10-08T15:55:23+08:00",
       amount: "9",
@@ -646,6 +615,8 @@ test("project profiles and fee versions mirror stores and inherit store rates", 
   let dialog = page.getByRole("dialog",{name:"新增手續費率",exact:true});
   const credit = dialog.getByRole("row").filter({hasText:"國內信用卡一次付清"});
   await expect(credit.getByRole("spinbutton")).toHaveValue("1.25");
+  await expect(credit.getByRole("spinbutton")).toBeDisabled();
+  await choose(page,credit.locator(".el-select"),"自訂");
   await expect(credit.getByRole("spinbutton")).toBeEnabled();
   await expect(dialog.getByRole("columnheader", {name:"費率來源", exact:true})).toHaveCount(0);
   await credit.getByRole("spinbutton").fill("1.75");
@@ -709,9 +680,9 @@ test("expanded role modal preserves selections across stores and edit, and enfor
   await expect(dialog.getByRole("checkbox", {name:"首頁檢視",exact:true})).toHaveCount(0);
   for (const label of ["標籤管理檢視", "標籤管理新增 / 編輯", "對帳單檢視", "對帳單封存"])
     await dialog.locator(`.el-checkbox[aria-label="${label}"]`).click();
-  await choose(page, dialog.locator(".el-select"), "教育事業部");
+  await choose(page, dialog.locator(".el-select").first(), "教育事業部");
   await expect(dialog.getByRole("checkbox", { name:"標籤管理新增 / 編輯", exact:true })).toBeChecked();
-  await expect(dialog).toContainText("無法透過角色授權");
+  await expect(dialog.locator('.el-checkbox[aria-label="支付工具設定檢視"]')).toBeVisible();
   await dialog.getByRole("button", { name:"確定", exact:true }).click();
   const row = app(page).getByRole("row").filter({hasText:"標籤編輯人員"});
   await row.getByRole("button", {name:"編輯", exact:true}).click();
@@ -878,13 +849,13 @@ test("statement editing, locked archive dates, report tabs and CSV download", as
   await edit.getByRole("button", { name: "取消", exact: true }).click();
   await row.getByRole("button", { name: "檢視 / 匯出" }).click();
   const report = page.getByRole("dialog", { name: "交易與退款紀錄" });
-  await expect(report.locator(".el-table__body tr")).toHaveCount(10);
+  await expect(report.locator(".el-table__body tr")).toHaveCount(6);
   await expect(report.locator(".el-table__footer")).toContainText("總計");
   await report.getByRole("tab", { name: "退款V2", exact: true }).click();
   await expect(
     report.getByRole("tab", { name: "退款V2", exact: true }),
   ).toHaveAttribute("aria-selected", "true");
-  await expect(report.locator(".el-table__body tr")).toHaveCount(7);
+  await expect(report.locator(".el-table__body tr")).toHaveCount(4);
   const downloaded = page.waitForEvent("download");
   await report.getByRole("button", { name: "匯出", exact: true }).click();
   expect((await downloaded).suggestedFilename()).toContain("退款V2.csv");

@@ -60,10 +60,18 @@
 
   const updateRow = (row) => {
     const number = row.cells[COL.ORDER_NUMBER]?.textContent.trim();
+    const orderAccess = findOrder(number);
+    if (!orderAccess || !PaymentAccess.allows(orderAccess)) { row.remove(); return; }
+    row.dataset.projectId = orderAccess[14];
     const state = getState(number);
     const order = findOrder(number);
 
     if (order) row.dataset.invoiceOrder = JSON.stringify(order);
+    const app = PaymentAccess.model(), project = app.data.projects.find(p => p.id === order?.[14]);
+    if (project) {
+      row.cells[2].textContent = app.data.stores.find(s => s.id === project.store)?.name;
+      row.cells[3].textContent = project.name;
+    }
 
     updateTransactionType(row.cells[COL.TRANSACTION_TYPE], state, order);
 
@@ -74,8 +82,22 @@
     document
       .querySelectorAll(".transaction-table tbody tr")
       .forEach(updateRow);
+    const pager = document.querySelector(".pager");
+    if (pager?.firstChild) pager.firstChild.textContent = `共 ${document.querySelectorAll(".transaction-table tbody tr").length} 項`;
   };
 
   update();
   window.addEventListener("pageshow", update);
+  const exportButton = document.createElement("button");
+  exportButton.type = "button";
+  exportButton.className = "btn plain";
+  exportButton.textContent = "匯出交易 CSV";
+  exportButton.dataset.permissionAction = "export";
+  exportButton.addEventListener("click", () => {
+    const records = window.transactionOrders.filter(order => PaymentAccess.allows(order,"transactions","export"));
+    const csv = "\uFEFF" + records.map(order => [order[0],order[14],order[7]].map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+    const link = document.createElement("a"); link.href = url; link.download = "transactions.csv"; link.click(); URL.revokeObjectURL(url);
+  });
+  document.querySelector("main")?.append(exportButton);
 })();

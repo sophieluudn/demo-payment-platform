@@ -8,7 +8,7 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 module.exports = defineConfig({
   // 測試檔案目錄與比對規則
   testDir: "./tests",
-  testMatch: "**/element-ui.spec.js",
+  testMatch: ["**/element-ui.spec.js", "**/authorization-ui.spec.js"],
 
   // 執行設定 (預留並行與重試機制)
   fullyParallel: true,

@@ -1,21 +1,23 @@
 (function (root) {
   "use strict";
   const actions = {
-    transactions: ["view", "refund"],
+    transactions: ["view", "refund", "export"],
     products: ["view", "create", "edit", "delete"],
     tags: ["view", "create", "edit"],
     reports: ["view", "export"],
     statements: ["view", "create", "edit", "archive", "export"],
     users: ["view", "create", "edit"],
     roles: ["view", "create", "edit"],
-    projects: ["view"],
-    stores: ["view"],
+    projects: ["view", "create", "edit"],
+    stores: ["view", "create", "edit"],
+    payments: ["view", "create", "edit"],
+    fees: ["view", "create", "edit"],
   };
   const labels = {
     home: "首頁", transactions: "所有交易紀錄", products: "商品管理",
     tags: "標籤管理", reports: "商品交易統計", statements: "對帳單",
     users: "使用者管理", roles: "角色管理", projects: "專案管理", stores: "商店管理",
-    payments: "支付工具設定", view: "檢視", create: "新增", edit: "編輯", createEdit: "新增 / 編輯",
+    fees: "費率管理", payments: "支付工具設定", view: "檢視", create: "新增", edit: "編輯", createEdit: "新增 / 編輯",
     delete: "刪除", refund: "退款", archive: "封存", export: "匯出",
   };
   const uid = (prefix) =>
@@ -63,6 +65,7 @@
       roles: [
         {
           id: "large",
+          permissionVersion: 3,
           name: "商店管理員（大）",
           store: "",
           manager: true,
@@ -70,6 +73,7 @@
         },
         {
           id: "small",
+          permissionVersion: 3,
           name: "商店管理員（小）",
           store: "edu",
           manager: true,
@@ -77,6 +81,7 @@
         },
         {
           id: "viewer",
+          permissionVersion: 3,
           name: "交易檢視角色",
           store: "",
           manager: false,
@@ -84,6 +89,7 @@
         },
         {
           id: "refund",
+          permissionVersion: 3,
           name: "交易退款角色",
           store: "",
           manager: false,
@@ -154,266 +160,195 @@
       this.normalize();
     }
     get user() {
-      return (
-        this.data.users.find((u) => u.id === this.identity) ||
-        this.data.users.find((u) => u.system)
-      );
+      return this.data.users.find(u => u.id === this.identity) || {id:null, name:"無效身分", grants:{}, enabled:false};
     }
-    role(id) {
-      return this.data.roles.find((r) => r.id === id);
+    get active() { return !!this.user.id && this.user.enabled !== false; }
+    get isSystem() { return this.active && this.user.system === true; }
+    role(id) { return this.data.roles.find(r => r.id === id); }
+    roleApplies(role, scope, target) {
+      if (!role || role.enabled === false) return false;
+      if (scope === "platform") return !role.store && !role.project;
+      const p = scope === "project" && this.data.projects.find(p => p.id === target);
+      const store = p ? p.store : target;
+      return (!role.store || role.store === store) && (!role.project || (scope === "project" && role.project === target));
+    }
+    roleIds(value) { return Array.isArray(value) ? value : value ? [value] : []; }
+    rolesAt(user, scope, target) {
+      const p = scope === "project" && this.data.projects.find(p => p.id === target);
+      const ids = [...this.roleIds(user.platformRoles),
+        ...(scope !== "platform" ? this.roleIds(user.storeGrants?.[p ? p.store : target]) : []),
+        ...(p ? this.roleIds(user.grants?.[target]) : [])];
+      return ids.map(id => this.role(id)).filter(r => this.roleApplies(r, scope, target));
+    }
+    hasAction(role, feature, action) {
+      if (!Array.isArray(role.permissions?.[feature])) return false;
+      return !!actions[feature]?.includes(action) && (action === "create" || action === "edit"
+        ? !!role.permissions[feature]?.some(a => a === "create" || a === "edit")
+        : !!role.permissions[feature]?.includes(action));
+    }
+    allowed(scope, target, feature, action = "view") {
+      if (!this.active || !actions[feature]?.includes(action)) return false;
+      if (scope === "store" && !this.data.stores.some(s => s.id === target)) return false;
+      if (scope === "project" && !this.data.projects.some(p => p.id === target)) return false;
+      if (!["platform", "store", "project"].includes(scope)) return false;
+      if (this.isSystem) return true;
+      // Platform operations must never be inferred from a store/project grant.
+      if (feature === "payments" || (feature === "stores" && action === "create")) scope = "platform";
+      return this.rolesAt(this.user, scope, target).some(r => this.hasAction(r, feature, action));
     }
     can(projectId, feature, action) {
-      if (feature === "home" && action === "view") return true;
-      const p = this.data.projects.find((p) => p.id === projectId);
-      if (!p) return false;
-      if (this.user.system) return true;
-      if (feature === "fees" || feature === "payments") return false;
-      const r = this.role(this.user.grants[p.id]);
-      return (
-        !!r &&
-        r.enabled !== false &&
-        (!r.store || r.store === p.store) &&
-        (action === "create" || action === "edit"
-          ? !!r.permissions[feature]?.some(a => a === "create" || a === "edit")
-          : !!r.permissions[feature]?.includes(action))
-      );
+      if (feature === "home") return this.active && action === "view";
+      return this.allowed("project", projectId, feature, action);
     }
+    canStore(store, feature, action = "view") { return this.allowed("store", store, feature, action); }
+    canPlatform(feature, action = "view") { return this.allowed("platform", "", feature, action); }
     projects(feature, action = "view") {
-      return this.data.projects.filter(
-        (p) =>
-          p.store === this.store &&
-          (feature
-            ? this.can(p.id, feature, action)
-            : this.user.system ||
-              (!!this.role(this.user.grants[p.id]) &&
-                (!this.role(this.user.grants[p.id]).store ||
-                  this.role(this.user.grants[p.id]).store === p.store))),
-      );
+      return this.data.projects.filter(p => p.store === this.store && (feature ? this.can(p.id, feature, action)
+        : Object.entries(actions).some(([f,aa]) => aa.some(a => this.can(p.id,f,a)))));
     }
-    stores() {
-      return this.data.stores.filter(
-        (s) =>
-          this.user.system ||
-          this.data.projects.some(
-            (p) =>
-              p.store === s.id &&
-              this.role(this.user.grants[p.id]) &&
-              (!this.role(this.user.grants[p.id]).store ||
-                this.role(this.user.grants[p.id]).store === s.id),
-          ),
-      );
+    stores(feature, action = "view") {
+      return this.data.stores.filter(s => feature
+        ? this.canStore(s.id,feature,action) || this.data.projects.some(p => p.store === s.id && this.can(p.id,feature,action))
+        : Object.entries(actions).some(([f,aa]) => aa.some(a => this.canStore(s.id,f,a) || this.data.projects.some(p => p.store === s.id && this.can(p.id,f,a)))));
     }
     normalize() {
-      if (!this.data.users.some((u) => u.id === this.identity))
-        this.identity = "admin";
       const stores = this.stores();
-      if (!stores.some((s) => s.id === this.store))
-        this.store = stores[0]?.id || "";
+      if (!stores.some(s => s.id === this.store)) this.store = stores[0]?.id || "";
     }
     switchStore(id) {
-      if (!this.stores().some((s) => s.id === id)) throw Error("此商店未授權");
+      if (!this.stores().some(s => s.id === id)) throw Error("此商店未授權");
       this.store = id;
     }
-    manageable(action) {
-      return this.projects("users", action);
-    }
+    manageable(action) { return this.projects("users", action); }
     visibleUsers() {
-      const ids = this.projects("users").map((p) => p.id);
-      return this.data.users.filter(
-        (u) => !u.system && ids.some((p) => u.grants[p]),
-      );
+      return this.data.users.filter(u => !u.system && this.projects("users").some(p => u.grants[p.id] || u.storeGrants?.[p.store] || u.platformRoles?.length));
     }
     availableExisting() {
-      // Only the system administrator can search the platform account directory.
-      // Other managers use a known login rather than enumerating unrelated accounts.
-      if (!this.manageable("create").length) return [];
-      return this.user.system
-        ? this.data.users.filter(
-            (u) => !u.system && !this.projects().some((p) => u.grants[p.id]),
-          )
-        : [];
+      return this.isSystem ? this.data.users.filter(u => !u.system && !this.projects().some(p => u.grants[p.id])) : [];
     }
-    canManageRoles(store = this.store, action = "edit") {
-      return (
-        this.user.system ||
-        this.data.projects.some(
-          (project) =>
-            project.store === store &&
-            this.can(project.id, "roles", action),
-        )
-      );
+    canManageRoles(store = this.store, action = "edit", project) {
+      return project ? this.can(project,"roles",action) : store ? this.canStore(store,"roles",action) : this.canPlatform("roles",action);
     }
-    roleActionAllowed(store, feature, action) {
-      return (
-        actions[feature]?.includes(action) &&
-        (this.user.system ||
-          this.data.projects.some(
-            (project) => project.store === store && this.can(project.id, feature, action),
-          ))
-      );
+    roleActionAllowed(store, feature, action, project) {
+      return project ? this.can(project,feature,action) : store ? this.canStore(store,feature,action) : this.canPlatform(feature,action);
     }
-    assignableRoles() {
-      return this.data.roles.filter(
-        (r) =>
-          r.enabled !== false &&
-          (!r.store || r.store === this.store) &&
-          (this.user.system ||
-            ["viewer", "refund"].includes(r.id) ||
-            (r.store === this.store &&
-              !r.manager &&
-              Object.entries(r.permissions).every(([feature, valid]) =>
-                valid.every((action) =>
-                  this.roleActionAllowed(this.store, feature, action),
-                ),
-              ))),
-      );
+    canGrant(role, scope, target) {
+      return this.roleApplies(role,scope,target) && !!role.permissions && Object.entries(role.permissions).every(([f,aa]) => Array.isArray(aa) && aa.every(a => this.allowed(scope,target,f,a)));
+    }
+    assignableRoles(projectId, store = this.store) {
+      const targets = projectId ? (this.can(projectId,"users","edit") ? [projectId] : []) : this.data.projects.filter(p => p.store === store && this.can(p.id,"users","edit")).map(p => p.id);
+      return this.data.roles.filter(r => targets.length && targets.every(p => this.canGrant(r,"project",p)));
     }
     canEditUser(id) {
-      const u = this.data.users.find((u) => u.id === id);
-      if (!u || u.system) return false;
-      if (this.user.system) return this.projects().some((p) => u.grants[p.id]);
-      if (u.id === this.user.id) return false;
-      const relevant = this.data.projects.filter(
-        (p) => p.store === this.store && u.grants[p.id],
-      );
-      // Partial-manager editing of a user with other project grants is explicitly unresolved.
-      return (
-        relevant.length > 0 &&
-        relevant.every((p) => this.can(p.id, "users", "edit")) &&
-        relevant.some((p) => !this.role(u.grants[p.id])?.manager)
-      );
+      const u = this.data.users.find(u => u.id === id);
+      if (!u || u.system || (!this.isSystem && id === this.identity)) return false;
+      return this.active && (this.isSystem || this.data.projects.some(p => p.store === this.store && (u.grants[p.id] || u.storeGrants?.[p.store]) && this.can(p.id,"users","edit")) || Object.keys(u.storeGrants || {}).some(s => this.canStore(s,"users","edit")) || (!!u.platformRoles?.length && this.canPlatform("users","edit")));
+    }
+    canChangeUserState(id) {
+      const u = this.data.users.find(u => u.id === id);
+      if (!u || !this.canEditUser(id)) return false;
+      const ranges = [...Object.keys(u.grants || {}).map(t => ["project",t]),
+        ...Object.keys(u.storeGrants || {}).map(t => ["store",t]),
+        ...(this.roleIds(u.platformRoles).length ? [["platform",""]] : [])];
+      return ranges.every(([s,t]) => this.allowed(s,t,"users","edit"));
+    }
+    roleTargets(role) {
+      const targets = [];
+      for (const u of this.data.users) {
+        for (const [id, value] of Object.entries(u.grants || {})) if (this.roleIds(value).includes(role.id)) targets.push(["project",id]);
+        for (const [id, value] of Object.entries(u.storeGrants || {})) if (this.roleIds(value).includes(role.id)) targets.push(["store",id]);
+        if (this.roleIds(u.platformRoles).includes(role.id)) targets.push(["platform",""]);
+      }
+      return targets;
+    }
+    assertRoleEditable(role, action = "edit") {
+      const scope = role.project ? "project" : role.store ? "store" : "platform";
+      const target = role.project || role.store || "";
+      if (!this.allowed(scope,target,"roles",action)) throw Error("沒有此範圍的角色管理權限；可建立獨立角色");
+      for (const [s,t] of this.roleTargets(role)) {
+        const ownAssignment = s === "platform" ? this.user.platformRoles : s === "store" ? this.user.storeGrants?.[t] : this.user.grants?.[t];
+        if (!this.allowed(s,t,"roles","edit") || (!this.isSystem && this.roleIds(ownAssignment).includes(role.id)))
+          throw Error("角色影響未授權範圍或自身授權；請建立獨立角色");
+      }
     }
     saveRole(input) {
-      if (!this.user.system && !this.data.projects.some(p => p.store === input.store && this.can(p.id, "roles", input.id ? "edit" : "create")))
-        throw Error("沒有此商店的角色管理權限");
-      if (!String(input.name || "").trim()) throw Error("請填寫角色名稱");
-      if (input.store && !this.data.stores.some((s) => s.id === input.store))
-        throw Error("適用商店不存在");
       const old = this.role(input.id);
-      if (
-        !this.user.system &&
-        (!input.store ||
-          input.store !== this.store ||
-          (old && (old.store !== this.store || old.manager)))
-      )
-        throw Error("只能設定目前商店的自訂角色");
-      if (
-        !this.user.system &&
-        Object.entries(input.permissions || {}).some(([feature, valid]) =>
-          valid.some(
-            (action) => !this.roleActionAllowed(input.store, feature, action),
-          ),
-        )
-      )
-        throw Error("不能授予超出自身權限的功能");
-      if (
-        this.data.roles.some(
-          (role) =>
-            role.id !== input.id &&
-            role.store === (input.store || "") &&
-            role.name === input.name.trim(),
-        )
-      )
-        throw Error("此商店已有相同角色名稱");
       if (input.id && !old) throw Error("角色不存在");
-      if (
-        old &&
-        input.store &&
-        this.data.users.some((u) =>
-          Object.entries(u.grants).some(
-            ([p, r]) =>
-              r === old.id &&
-              this.data.projects.find((x) => x.id === p)?.store !== input.store,
-          ),
-        )
-      )
-        throw Error("此角色已有其他商店的授權；變更適用範圍的處理規則待確認");
-      const role = {
-        id: old?.id || uid("role"),
-        permissionVersion: 2,
-        name: input.name.trim(),
-        store: input.store || "",
-        manager: old?.manager || false,
-        note: String(input.note || ""),
-        enabled: input.enabled !== false,
-        permissions: Object.fromEntries(
-          Object.entries(actions).map(([feature, valid]) => [
-            feature,
-            valid.filter((a) => a === "create" || a === "edit"
-              ? input.permissions?.[feature]?.some(value => value === "create" || value === "edit")
-              : input.permissions?.[feature]?.includes(a)),
-          ]),
-        ),
-      };
-      if (old) Object.assign(old, role);
-      else this.data.roles.push(role);
+      const role = {id:old?.id || uid("role"), name:String(input.name || "").trim(), store:input.store || "", project:input.project || "", note:String(input.note || ""), enabled:input.enabled !== false, manager:old?.manager || false, permissionVersion:3,
+        permissions:Object.fromEntries(Object.entries(actions).map(([f,aa]) => [f,aa.filter(a => a === "create" || a === "edit" ? input.permissions?.[f]?.some(x => x === "create" || x === "edit") : input.permissions?.[f]?.includes(a))]))};
+      if (!role.name) throw Error("請填寫角色名稱");
+      if (role.store && !this.data.stores.some(s => s.id === role.store)) throw Error("適用商店不存在");
+      if (role.project && !this.data.projects.some(p => p.id === role.project && p.store === role.store)) throw Error("適用專案不存在");
+      if (this.data.roles.some(r => r.id !== role.id && r.store === role.store && (r.project || "") === role.project && r.name === role.name)) throw Error("此範圍已有相同角色名稱");
+      if (old) this.assertRoleEditable(old);
+      this.assertRoleEditable(role,old ? "edit" : "create");
+      const scope = role.project ? "project" : role.store ? "store" : "platform", target = role.project || role.store || "";
+      if (!this.isSystem && Object.entries(input.permissions || {}).some(([f,aa]) => !Array.isArray(aa) || aa.some(a => !this.allowed(scope,target,f,a)))) throw Error("不能授予超出自身權限的功能");
+      const targets = [[scope,target],...(old ? this.roleTargets(old) : [])];
+      for (const [s,t] of targets) {
+        if (!this.roleApplies({...role,enabled:true},s,t)) throw Error("變更適用範圍會影響既有授權");
+        if (!this.isSystem && !this.canGrant({...role,enabled:true},s,t)) throw Error("不能授予超出自身在目標範圍的功能");
+      }
+      if (old) Object.assign(old,role); else this.data.roles.push(role);
       return role;
     }
-    saveUser({ mode, id, existingLogin, name = "", login = "", grants = {} }) {
-      if (!["new", "existing", "edit"].includes(mode))
-        throw Error("不支援的操作");
-      const edit = mode === "edit",
-        allowed = this.manageable(edit ? "edit" : "create").map((p) => p.id);
-      if (!allowed.length)
-        throw Error(edit ? "未授予使用者編輯權限" : "未授予使用者新增權限");
-      let target =
-        mode === "existing" && existingLogin
-          ? this.data.users.find((u) => u.login === existingLogin.trim())
-          : this.data.users.find((u) => u.id === id);
-      if (edit && !this.canEditUser(id))
-        throw Error(
-          "無可編輯授權，或此操作涉及自己、管理員身分／未授權專案，規則待確認",
-        );
-      if (target?.system) throw Error("此流程不能指派系統管理員帳號");
-      if (mode === "existing") {
-        if (!target) throw Error("找不到此登入帳號，請確認輸入內容");
-        if (
-          this.data.projects.some(
-            (p) => p.store === this.store && target.grants[p.id],
-          )
-        )
-          throw Error(
-            "帳號已加入目前商店，請使用編輯授權；不能透過新增流程更改既有管理員身分",
-          );
+    saveUser({mode,id,existingLogin,name="",login="",grants={},storeGrants={},platformRoles,enabled}) {
+      if (!["new","existing","edit"].includes(mode)) throw Error("不支援的操作");
+      const edit = mode === "edit", action = edit ? "edit" : "create";
+      let target = existingLogin ? this.data.users.find(u => u.login === existingLogin.trim()) : this.data.users.find(u => u.id === id);
+      if ((edit || mode === "existing") && !target) throw Error("使用者不存在");
+      if (target?.system || (!this.isSystem && target?.id === this.identity)) throw Error("不能變更系統管理員身分或自身授權");
+      if (mode === "new" && (!name.trim() || !login.trim() || this.data.users.some(u => u.login === login.trim()))) throw Error("請填寫姓名與唯一登入帳號");
+      if (platformRoles !== undefined && platformRoles !== null && !Array.isArray(platformRoles)) throw Error("全域授權須提交角色陣列");
+      const changes = [...Object.entries(grants).map(([t,r]) => ["project",t,r]),...Object.entries(storeGrants).map(([t,r]) => ["store",t,r]),...(platformRoles !== undefined ? [["platform","",platformRoles]] : [])];
+      if (!changes.length && !edit) throw Error("請提交至少一項授權");
+      for (const [scope,t,value] of changes) {
+        if (value !== null && !(typeof value === "string" && value.length) && !(Array.isArray(value) && value.every(id => typeof id === "string" && id.length))) throw Error("撤銷須明確提交 null 或空陣列，角色 ID 不可空白");
+        if (!this.allowed(scope,t,"users",action)) throw Error("未授予目標範圍的使用者新增 / 編輯權限");
+        const prior = scope === "project" ? target?.grants[t] : scope === "store" ? target?.storeGrants?.[t] : target?.platformRoles;
+        // Removing/replacing a grant is also an authority-sensitive operation.
+        for (const roleId of [...this.roleIds(prior),...this.roleIds(value)]) {
+          const r = this.role(roleId);
+          if (!r || (!this.isSystem && !this.canGrant({...r,enabled:true},scope,t))) throw Error("無權指派或撤銷此範圍的角色");
+          if (this.roleIds(value).includes(roleId) && !this.roleApplies(r,scope,t)) throw Error("角色已停用或不適用目標範圍");
+        }
       }
-      if (mode === "new") {
-        if (!name.trim() || !login.trim()) throw Error("請填寫姓名與登入帳號");
-        if (this.data.users.some((u) => u.login === login.trim()))
-          throw Error("登入帳號已存在，請改用加入既有帳號");
+      if (edit && !changes.length && !this.canEditUser(id)) throw Error("沒有使用者編輯權限");
+      // Account state affects all assignments, so it needs authority over every assignment.
+      if (enabled !== undefined && target && enabled !== (target.enabled !== false)) {
+        if (!this.canChangeUserState(target.id)) throw Error("不能變更涉及其他範圍的使用者狀態");
       }
-      const entries = Object.entries(grants);
-      if (!entries.length)
-        throw Error("請勾選至少一個專案；撤銷／移除流程待確認");
-      for (const [p, roleId] of entries) {
-        const r = this.role(roleId);
-        if (!allowed.includes(p) || !r || (r.store && r.store !== this.store))
-          throw Error("專案或角色超出目前可設定範圍");
-        if (
-          !this.user.system &&
-          !this.assignableRoles().some((x) => x.id === roleId)
-        )
-          throw Error("無權指派此角色");
-        if (!this.user.system && this.role(target?.grants[p])?.manager)
-          throw Error("商店管理員身分僅系統管理員可授予或變更");
+      const user = mode === "new" ? {id:uid("user"),name:name.trim(),login:login.trim(),grants:{},storeGrants:{}} : target;
+      user.storeGrants ||= {};
+      for (const [scope,t,value] of changes) {
+        if (scope === "platform") user.platformRoles = [...(value || [])];
+        else { const map = scope === "project" ? user.grants : user.storeGrants; if (value === null || (Array.isArray(value) && !value.length)) delete map[t]; else map[t] = value; }
       }
-      const user =
-        mode === "new"
-          ? {
-              id: uid("user"),
-              name: name.trim(),
-              login: login.trim(),
-              grants: {},
-            }
-          : target;
-      // Omitted projects are deliberately preserved; removal has not been specified.
-      Object.assign(user.grants, grants);
+      if (enabled !== undefined) user.enabled = enabled;
       if (mode === "new") this.data.users.push(user);
       return user;
     }
+    saveStore(input) {
+      const old = this.data.stores.find(s => s.id === input.id);
+      if (input.id && !old) throw Error("商店不存在");
+      if (!(old ? this.canStore(old.id,"stores","edit") : this.canPlatform("stores","create"))) throw Error("沒有商店新增 / 編輯權限");
+      const name = String(input.name || "").trim();
+      if (!name) throw Error("請輸入商店名稱");
+      if (input.storeId && this.data.stores.some(s => s.id !== input.id && (s.storeId ?? s.id) === input.storeId)) throw Error("此商店 ID 已存在");
+      const values = {name,storeId:String(input.storeId || ""),token:String(input.token || ""),enabled:input.enabled !== false};
+      if (old) Object.assign(old,values); else this.data.stores.push({id:uid("store"),...values});
+      return old || this.data.stores.at(-1);
+    }
+    transactionAllowed(record, feature = "transactions", action = "view") {
+      return !!record?.projectId && this.can(record.projectId,feature,"view") && this.can(record.projectId,feature,action);
+    }
+    assertTransaction(record, feature = "transactions", action = "view") {
+      if (!this.transactionAllowed(record,feature,action)) throw Error("此交易不在授權範圍或缺少功能權限");
+    }
     saveProject(input) {
-      if (!this.user.system) throw Error("僅系統管理員可設定專案");
       const old = this.data.projects.find(p => p.id === input.id);
       if (input.id && !old) throw Error("專案不存在");
+      if (!(old ? this.can(old.id,"projects","edit") : this.canStore(input.store,"projects","create"))) throw Error("沒有目標範圍的專案新增 / 編輯權限");
       const name = String(input.name || "").trim();
       const projectId = String(input.projectId || "").trim();
       if (!name) throw Error("請輸入專案名稱");
@@ -426,7 +361,8 @@
       return old || this.data.projects.at(-1);
     }
     savePaymentTool(input) {
-      if (!this.user.system) throw Error("僅系統管理員可設定支付工具");
+      if (!this.canPlatform("payments",input.id ? "edit" : "create")) throw Error("沒有平台支付工具設定權限");
+      if ((!input.id || !input.metadataOnly) && !this.canPlatform("fees","edit")) throw Error("設定預設費率需平台費率管理權限");
       const old = this.data.paymentTools.find((t) => t.id === input.id);
       if (input.id && !old) throw Error("支付工具不存在");
       const values = Object.fromEntries(
@@ -490,7 +426,7 @@
     }
     feeCan(key, action) {
       return (
-        !!this.user.system &&
+        this.canPlatform("fees",action) &&
         Object.hasOwn(this.data.fees, key) &&
         this.data.paymentTools.some((t) => t.id === key) &&
         ["view", "edit"].includes(action)
@@ -498,7 +434,7 @@
     }
     setFee(key, value) {
       if (!this.feeCan(key, "edit"))
-        throw Error("僅系統管理員可設定支付工具與手續費");
+        throw Error("沒有平台費率新增 / 編輯權限");
       if (!String(value).trim() || !Number.isFinite(Number(value)))
         throw Error("請填寫有效的費率數值");
       this.saveFeeVersion("global", key, {
@@ -578,6 +514,7 @@
   }
   Object.assign(SystemManagement.prototype, {
     feeVersions(scope, target) {
+      if (!(scope === "global" ? this.canPlatform("fees","view") : this.allowed(scope,target,"fees","view"))) throw Error("沒有目標範圍的費率檢視權限");
       return this.data.feeVersions
         .filter((v) => v.scope === scope && v.target === target)
         .map((v) => structuredClone(v))
@@ -594,7 +531,6 @@
       }, null);
     },
     assertFeeScope(scope, target) {
-      if (!this.user.system) throw Error("僅系統管理員可設定手續費");
       const collection = {
         global: "paymentTools",
         store: "stores",
@@ -605,6 +541,7 @@
         !this.data[collection].some((item) => item.id === target)
       )
         throw Error("費率設定對象不存在");
+      if (!(scope === "global" ? this.canPlatform("fees","edit") : this.allowed(scope,target,"fees","edit"))) throw Error("沒有目標範圍的費率管理權限");
     },
     saveFeeVersion(scope, target, input, now = new Date()) {
       this.assertFeeScope(scope, target);
@@ -788,6 +725,7 @@
       };
     },
     recordTransactionFee({ id, toolId, projectId, paidAt, amount }) {
+      this.assertTransaction({projectId});
       if (!id || !projectId || !paidAt)
         throw Error("交易需包含編號、專案與付款成功時間");
       const existing = this.data.feeSnapshots[id];
@@ -881,6 +819,17 @@
       t.note ??= "";
     });
     const previous = data.fees;
+    if (!data.legacyFeeMigrationVersion) {
+      data.legacyFeeOverrides = {...(data.legacyFeeOverrides || {}),...Object.fromEntries(Object.entries(previous).filter(([key]) => /^(store|project):/.test(key)))};
+      data.feeVersions ||= [];
+      for (const [key,value] of Object.entries(data.legacyFeeOverrides)) {
+        const [scope,target] = key.split(":");
+        const collection = scope === "store" ? data.stores : data.projects;
+        if (!collection.some(item => item.id === target) || !/^\d+(\.\d{1,6})?$/.test(String(value)) || Number(value) > 100 || data.feeVersions.some(v => v.scope === scope && v.target === target)) continue;
+        data.feeVersions.push({id:uid("fee-legacy"),scope,target,effectiveAt:"1970-01-01T00:00:00.000Z",createdAt:new Date().toISOString(),createdBy:"既有費率匯入",entries:Object.fromEntries(data.paymentTools.map(t => [t.id,t.id === "credit-card" ? {mode:"custom",fee:String(value)} : {mode:"inherit"}]))});
+      }
+      data.legacyFeeMigrationVersion = 1;
+    }
     data.fees = Object.fromEntries(
       data.paymentTools.map((t) => [
         t.id,
@@ -903,14 +852,12 @@
       if (rename && u.name === rename[0]) u.name = rename[1];
       if (u.id === "admin" && u.login === "demo-admin") u.login = "admin";
     });
-    data.users = data.users.filter((u) => !["fee-only", "none"].includes(u.id));
     data.users.forEach((user) => {
       if (!user.system && !user.email)
         user.email = user.login.includes("@")
           ? user.login
           : user.login + "@gmail.com";
     });
-    data.roles = data.roles.filter((r) => r.id !== "fee-reader");
     data.roles.forEach((r) => {
       // Upgrade once: preserve old access without re-granting permissions on reload.
       if (!r.permissionVersion) {
@@ -923,7 +870,7 @@
         r.permissions.stores = ["view"];
         r.permissionVersion = 1;
       }
-      delete r.permissions.fees;
+
       delete r.permissions.home;
       if ((r.permissionVersion || 0) < 2) {
         for (const [feature, valid] of Object.entries(actions)) {
@@ -933,7 +880,13 @@
         }
         r.permissionVersion = 2;
       }
-      delete r.permissions.payments;
+      if (r.permissionVersion < 3) {
+        // These legacy fields were nonfunctional in v2. Do not activate latent access.
+        delete r.permissions.payments;
+        delete r.permissions.fees;
+        r.permissionVersion = 3;
+      }
+
       if (r.id === "refund" && r.name === "退款展示角色")
         r.name = "交易退款角色";
     });
@@ -981,7 +934,16 @@
     const rounded = (numerator * 100000n + denominator / 2n) / denominator;
     return Number(rounded < 100000n ? 100000n : rounded) / 100000;
   }
-  const api = { SystemManagement, seed, actions, labels, isSavedData, migrate, installFeeDemo, calculateEstimatedFee };
+  function current(storage = root.localStorage) {
+    const raw = storage?.getItem("payment-system-management-v2") ?? storage?.getItem("payment-system-demo-v1");
+    if (raw == null) return new SystemManagement(migrate(seed()), "admin"); // Explicit first-run demo identity.
+    try {
+      const saved = JSON.parse(raw);
+      if (!isSavedData(saved?.data)) throw Error("無效資料");
+      return new SystemManagement(migrate(saved.data), saved.currentUserId ?? "invalid", saved.store);
+    } catch { return new SystemManagement(seed(), "invalid"); }
+  }
+  const api = { SystemManagement, seed, actions, labels, isSavedData, migrate, installFeeDemo, calculateEstimatedFee, current };
   if (typeof module !== "undefined") module.exports = api;
   else root.SystemManagement = api;
 })(typeof window !== "undefined" ? window : globalThis);

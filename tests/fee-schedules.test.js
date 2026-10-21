@@ -60,7 +60,7 @@ test("new projects inherit store tool availability and validate profile changes"
   assert.throws(()=>app.saveProject({name:"重複",store:"edu",projectId:"NEW"}),/已存在/);
   assert.throws(()=>app.saveProject({id:project.id,name:project.name,store:"u"}),/不可變更/);
   app.identity = "big";
-  assert.throws(()=>app.saveProject({name:"未授權",store:"edu"}),/系統管理員/);
+  assert.throws(()=>app.saveProject({name:"未授權",store:"edu"}),/權限/);
 });
 test("exact Taipei midnight selects the new rate and leaves earlier transactions unchanged", () => {
   const app = new SystemManagement();
@@ -272,10 +272,10 @@ test("invalid and partial batches cannot write any settings or bypass permission
   );
   assert.equal(app.data.feeVersions.length, count);
   app.identity = "big";
-  assert.throws(() => global(app, "3"), /管理員/);
+  assert.throws(() => global(app, "3"), /權限/);
   assert.throws(
     () => app.saveFeeVersion("store", "edu", { entries: entries(app) }),
-    /管理員/,
+    /權限/,
   );
 });
 test("migration is idempotent and retains scheduled overrides and locked fee snapshots", () => {

@@ -37,6 +37,7 @@
         end,
         notes: row.cells[8].textContent,
         archived: "",
+        projectIds: ["A"], // Explicitly authored fixture; saved legacy entries are not inferred.
       };
     });
   };
@@ -61,8 +62,8 @@
   let selectedChoices = {};
 
   const choices = {
-    stores: [...new Set(entries.flatMap((entry) => entry.stores))],
-    projects: [...new Set(entries.flatMap((entry) => entry.projects))],
+    stores: PaymentAccess.model().stores("statements").map(s => s.name),
+    projects: PaymentAccess.model().projects("statements","create").map(p => p.id),
     products: DEFAULT_PRODUCTS,
   };
 
@@ -220,7 +221,8 @@
   const renderTable = () => {
     tbody.replaceChildren();
 
-    entries.forEach((entry) => {
+    const visible = entries.filter(entry => PaymentAccess.statementAllowed(entry));
+    visible.forEach((entry) => {
       const row = tbody.insertRow();
       row.dataset.id = entry.id;
 
@@ -244,6 +246,8 @@
       const dateCell = row.insertCell();
       const link = document.createElement("a");
       link.href = "#statement-edit";
+      link.dataset.permissionAction = "edit";
+      link.hidden = !PaymentAccess.statementAllowed(entry,"edit");
       link.textContent = `${entry.start.replaceAll("-", "/")} - ${entry.end.replaceAll("-", "/")}`;
       dateCell.append(link);
 
@@ -252,16 +256,18 @@
       archiveCell.innerHTML = entry.archived
         ? entry.archived
         : '<button type="button" class="btn plain statement-archive">封存</button>';
+      if (!PaymentAccess.statementAllowed(entry,"archive")) archiveCell.querySelector("button")?.remove();
 
       // 操作欄位與備註
       row.insertCell().innerHTML = '<button type="button" class="btn primary">檢視 / 匯出</button>';
       row.insertCell().textContent = entry.notes;
     });
 
-    pager.firstChild.textContent = `共 ${baselineCount + entries.length - baselineRows} 項`;
+    pager.firstChild.textContent = `共 ${visible.length} 項`;
   };
 
   const openModal = (entry = null) => {
+    if (entry ? !PaymentAccess.statementAllowed(entry,"edit") : !PaymentAccess.model().projects("statements","create").length) return;
     editingEntry = entry;
     form.reset();
     form.dataset.validationSubmitted = "false";
@@ -270,7 +276,7 @@
 
     selectedChoices = {
       stores: [...(entry?.stores || [])],
-      projects: [...(entry?.projects || [])],
+      projects: [...(entry?.projectIds || [])],
       products: [...(entry?.products || [])],
     };
 
@@ -321,6 +327,7 @@
     } else if (event.target.closest("button")?.textContent.trim() === "檢視 / 匯出") {
       window.openStatementReport(entry);
     } else if (event.target.closest(".statement-archive")) {
+      if (!PaymentAccess.statementAllowed(entry,"archive")) return;
       entry.archived = formatNow();
       persistEntries();
       renderTable();
@@ -348,7 +355,13 @@
       ...selectedChoices,
       id: editingEntry?.id || Math.max(0, ...entries.map((e) => e.id)) + 1,
       archived: editingEntry?.archived || "",
+      projectIds: [...selectedChoices.projects],
     };
+    if (!PaymentAccess.statementAllowed(newEntry, editingEntry ? "edit" : "create")) return;
+    if (editingEntry && !PaymentAccess.statementAllowed(editingEntry,"edit")) return;
+    const dataModel = PaymentAccess.model();
+    newEntry.projects = newEntry.projectIds.map(id => dataModel.data.projects.find(p => p.id === id)?.name);
+    newEntry.stores = [...new Set(newEntry.projectIds.map(id => dataModel.data.stores.find(s => s.id === dataModel.data.projects.find(p => p.id === id)?.store)?.name))];
 
     if (editingEntry?.archived) {
       newEntry.start = editingEntry.start;

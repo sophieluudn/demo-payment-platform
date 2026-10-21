@@ -5,12 +5,16 @@
   const order = window.transactionOrders?.find(row => row[0] === number);
   const main = document.querySelector("main.order-detail");
   const esc = value => String(value ?? "").replace(/[&<>"']/g, char => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
-  if (!order) {
+  if (!order || !window.PaymentAccess.allows(order)) {
     document.getElementById("order-breadcrumb").textContent = "訂單明細";
     main.innerHTML = `<a href="transactions.html" class="btn">返回所有交易紀錄</a><section class="detail-card"><h2>找不到此訂單</h2><p>請返回交易列表，選擇要查看的訂單。</p></section>`;
     return;
   }
-  const [id, provider, product, store, project, card, payment, amount, created, paid, status] = order;
+  const [id, provider, product, , , card, payment, amount, created, paid, status] = order;
+  const app = PaymentAccess.model();
+  const projectRecord = app.data.projects.find(p => p.id === order[14]);
+  const store = app.data.stores.find(s => s.id === projectRecord.store)?.name;
+  const project = projectRecord.name;
   const detail = window.transactionDetails?.[id] || {};
   const summary = (target, entries) => {
     document.getElementById(target).innerHTML = entries.map(([label,value])=>`<dt>${esc(label)}</dt><dd>${esc(value)}</dd>`).join("");
