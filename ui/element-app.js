@@ -711,7 +711,7 @@ function renderCell(row, index) {
   }
   if (
     cell.childElementCount === 0 &&
-    /^(啟用|不啟用|上架中|已下架|交易成功|取消交易|部份退款|開發票成功)$/.test(
+    /^(啟用|停用|不啟用|上架中|已下架|交易成功|取消交易|部份退款|開發票成功)$/.test(
       text,
     )
   ) {

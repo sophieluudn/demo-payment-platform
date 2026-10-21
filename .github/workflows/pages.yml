@@ -35,6 +35,23 @@ jobs:
           test -s _site/ui/dist/element-app.css
           test -s _site/ui/dist/access-app.js
           test -s _site/ui/dist/access-app.css
+      - name: Version deployed assets to refresh browser caches
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = require('node:path');
+          const crypto = require('node:crypto');
+          for (const name of fs.readdirSync('_site').filter(name => name.endsWith('.html'))) {
+            const file = path.join('_site', name);
+            const html = fs.readFileSync(file, 'utf8').replace(/\b(src|href)="([^"?#]+\.(?:js|css))(?:\?[^"#]*)?"/g, (match, attr, asset) => {
+              if (asset.startsWith('/') || /^[a-z]+:/i.test(asset)) return match;
+              const content = fs.readFileSync(path.join('_site', asset));
+              const version = crypto.createHash('sha256').update(content).digest('hex').slice(0, 12);
+              return `${attr}="${asset}?v=${version}"`;
+            });
+            fs.writeFileSync(file, html);
+          }
+          NODE
       - uses: actions/upload-pages-artifact@v4
         with:
           path: _site

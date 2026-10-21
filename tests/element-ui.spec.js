@@ -46,6 +46,7 @@ test("store and project action buttons have a visible gap", async ({ page }) => 
     await page.setViewportSize({ width, height: 900 });
     for (const route of ["stores", "projects"]) {
       await page.goto(`/${route}.html`);
+      await expect(app(page).locator(".el-tag").filter({hasText:/^啟用$/}).first()).toBeVisible();
       const actions = app(page).locator(".management-list-actions").first();
       await expect(actions).toBeVisible();
       const buttons = actions.getByRole("button");
