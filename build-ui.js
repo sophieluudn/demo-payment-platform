@@ -1,6 +1,6 @@
 const esbuild = require("esbuild");
 
-const isProduction = process.env.NODE_ENV === "production" || true;
+const isProduction = true;
 
 /** @type {import('esbuild').BuildOptions} */
 const buildOptions = {

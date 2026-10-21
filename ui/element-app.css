@@ -427,6 +427,16 @@ a:active {
   margin: 3px;
 }
 
+.management-list-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.el-table .management-list-actions .el-button {
+  margin: 0;
+}
+
 .ep-payment-table .el-button.is-link {
   max-width: 100%;
   height: auto;
@@ -463,7 +473,6 @@ a:active {
 }
 
 .ep-export,
-.ep-sys-form-actions,
 .ep-sys-form-actions,
 .ep-product-modal-actions,
 .ep-payment-links-actions,
@@ -1287,6 +1296,20 @@ a:active {
   font-weight: 400;
 }
 
+.platform-account-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.platform-account-trigger:focus-visible {
+  outline: 2px solid var(--el-color-primary);
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 .platform-account-arrow {
   display: inline-flex;
   align-self: flex-end;
@@ -1379,12 +1402,6 @@ body .el-button > span {
   gap: 20px;
   margin: 8px 0 24px;
 }
-.ep-store-fee-dates > [data-ui-tag="label"],
-.ep-store-fee-settings-row {
-  display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 16px;
-}
 .ep-store-fee-dates > [data-ui-tag="label"] {
   align-items: center;
 }
@@ -1392,25 +1409,12 @@ body .el-button > span {
   width: 300px;
   max-width: 100%;
 }
-.ep-store-fee-dates > [data-ui-tag="label"] > span,
-.ep-store-fee-settings-label {
-  text-align: right;
-  color: var(--el-text-color-regular);
-  font-weight: 500;
-}
-.ep-store-fee-settings-label { padding-top: 14px; }
 .ep-store-fee-settings-content { min-width: 0; }
+.ep-store-fee-settings-content .el-table { width: 100%; }
+.ep-store-fee-modal-table .ep-fee-value > span { flex: none; }
 .ep-store-fee-settings-content .ep-table-wrap { margin-top: 0; }
 .ep-store-fee-modal-table .store-status-control { display: flex; }
 .ep-store-fee-modal-table .ep-fee-value { display: flex; align-items: center; gap: 12px; }
-.ep-store-fee-modal-table .el-input { max-width: 220px; }
-@media (width <= 767px) {
-  .ep-store-fee-dates > [data-ui-tag="label"],
-  .ep-store-fee-settings-row {
-    grid-template-columns: 110px minmax(0, 1fr);
-    gap: 12px;
-  }
-}
 
 .ep-store-fee-end-controls { display:flex; align-items:center; flex-wrap:wrap; gap:12px; min-width:0; }
 .ep-store-fee-end-controls .el-date-editor { flex:0 1 300px; }
@@ -1455,10 +1459,10 @@ body .el-button > span {
 .platform-field.is-invalid > .el-input-number .el-input__wrapper { box-shadow:0 0 0 1px var(--el-color-danger) inset; }
 .ep-store-fee-dates .platform-field { width:300px; max-width:100%; }
 .ep-store-fee-end-controls > .platform-field { flex:0 1 300px; }
-.ep-store-fee-modal-table .ep-fee-value > .platform-field { flex:1; }
+.ep-store-fee-modal-table .ep-fee-value > .platform-field { flex:0 1 150px; width:150px; }
+.ep-store-fee-modal-table .ep-fee-value .el-input-number { width:100%; }
 
 .platform-field > .el-date-editor { flex: none; }
-.ep-store-fee-modal-table .ep-fee-value > .platform-field { flex:0 1 220px; }
 
 .ep-store-fee-dates .store-status-control { display:flex; align-items:center; }
 .ep-store-fee-status-history { margin:16px 0 0 166px; color:var(--el-text-color-regular); font-size:12px; }
@@ -1643,7 +1647,7 @@ body .el-button > span {
   --el-table-border-color: #efefef;
   background: #efefef;
 }
-.ep-refund-table.el-table .cell { text-align: center; padding-inline: 12px; }
+.ep-refund-table.el-table .cell { text-align: left; padding-inline: 12px; }
 .ep-refund-table.el-table th.el-table__cell { background: #efefef; }
 .ep-refund-table.el-table .el-table__cell { padding-block: 8px; }
 .ep-refund-modal .el-input-number { width: 100px; max-width: 100%; }
@@ -1688,4 +1692,8 @@ body .el-button > span {
 }
 @media (width <=767px) {
   .el-dialog .ep-role-setting-row.ep-role-permissions-row { grid-template-columns:minmax(0,1fr); }
+  .el-dialog .ep-store-fee-settings-row[data-ui-tag] { grid-template-columns:minmax(0,1fr); gap:8px; }
+  .el-dialog .ep-store-fee-settings-row > .modal-field-label { text-align:left; padding-top:0; }
+  .ep-store-fee-modal-table.el-table .cell { padding-inline:8px; }
+  .ep-store-fee-modal-table .ep-fee-value > .platform-field { flex-basis:110px; width:110px; }
 }

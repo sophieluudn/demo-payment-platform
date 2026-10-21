@@ -11,6 +11,9 @@ import {
   ElBreadcrumb,
   ElBreadcrumbItem,
   ElAvatar,
+  ElDropdown,
+  ElDropdownMenu,
+  ElDropdownItem,
   ElButton,
   ElIcon,
   ElInput,
@@ -295,6 +298,7 @@ function columnSizing(title, table) {
     })[title] || { minWidth: 140 };
   }
   if (table?.closest("#store-fee-modal-form")) {
+    if (innerWidth < 768) return { minWidth: ({"支付工具":110,"啟用":60,"手續費率":150})[title] || 110 };
     return { minWidth: ({"支付工具":180,"費率來源":150,"啟用":80,"手續費率":200})[title] || 140 };
   }
   if (table?.closest(".role-permission-table")) {
@@ -676,6 +680,9 @@ function renderCell(row, index) {
   const cell = cellPositions.get(row)?.[index]?.cell;
   if (!cell) return [];
   const text = cell.textContent.trim();
+  if (cell.querySelector('[data-action="fee-store"], [data-action="fee-project"], [data-action="edit-store"], [data-action="edit-project"]')) {
+    return h("div", { class: "management-list-actions" }, children(cell));
+  }
   if (cell.closest(".order-history")) return children(cell);
   if (cell.closest(".store-fee-versions-table") && ["生效中","待生效","已結束","未套用"].includes(text)) {
     const reason = cell.querySelector("[title]")?.title;
@@ -1434,8 +1441,19 @@ const App = {
                   { class: "platform-clock" },
                   header?.querySelector(".clock")?.textContent,
                 ),
-                h(ElAvatar, { size: isHome ? 40 : 36, class: "platform-avatar" }, () => "S"),
-                isHome && h("span", { class: "platform-account-arrow", "aria-hidden": "true" }, [icon(ArrowDown)]),
+                h(ElDropdown, {
+                  trigger: "click",
+                  onCommand: (command) => location.assign(command === "switch-store" ? "select-store.html" : "login.html"),
+                }, {
+                  default: () => h("button", { type: "button", class: "platform-account-trigger", "aria-label": "帳戶選單" }, [
+                    h(ElAvatar, { size: isHome ? 40 : 36, class: "platform-avatar" }, () => "C"),
+                    h("span", { class: "platform-account-arrow", "aria-hidden": "true" }, [icon(ArrowDown)]),
+                  ]),
+                  dropdown: () => h(ElDropdownMenu, null, () => [
+                    h(ElDropdownItem, { command: "switch-store" }, () => "切換商店"),
+                    h(ElDropdownItem, { command: "logout" }, () => "登出"),
+                  ]),
+                }),
               ]),
             ]),
             h(ElMain, { class: ["platform-main", ...classNames(main)] }, () => [

@@ -118,7 +118,7 @@ createApp({
             ])
           : h("main", { class: "login-screen" }, [
               h("div", { class: "login-content" }, [
-                h("h1", "行動支付支援平台"),
+                h("h1", "行動支付支援平台 (Demo)"),
                 h(ElButton, { size: "large", class: "google-login", onClick: login }, () => [
                   h("img", {
                     src: "assets/google.svg",

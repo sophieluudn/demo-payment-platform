@@ -2,6 +2,49 @@ const { test, expect } = require("@playwright/test");
 const STORAGE = "payment-system-management-v2";
 const app = (page) => page.locator("#element-app");
 const field = (page, id) => page.locator(`[data-source-id="${id}"]`);
+
+test("store and project action buttons have a visible gap", async ({ page }) => {
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ["stores", "projects"]) {
+      await page.goto(`/${route}.html`);
+      const actions = app(page).locator(".management-list-actions").first();
+      await expect(actions).toBeVisible();
+      const buttons = actions.getByRole("button");
+      const first = await buttons.nth(0).boundingBox();
+      const second = await buttons.nth(1).boundingBox();
+      expect(Math.max(second.x - first.x - first.width, second.y - first.y - first.height)).toBeGreaterThanOrEqual(7.5);
+    }
+  }
+});
+
+test("list headers and cells are left aligned across management pages", async ({ page }) => {
+  for (const route of ["transactions", "products", "stores", "projects", "payments", "users", "roles", "tags", "statements", "statistics"]) {
+    await page.goto(`/${route}.html`);
+    await expect(app(page)).toBeVisible();
+    const cells = app(page).locator(".el-table th .cell, .el-table td .cell");
+    await expect(cells.first()).toBeVisible();
+    expect(await cells.evaluateAll(nodes => nodes.filter(node => getComputedStyle(node).textAlign !== "left").map(node => node.textContent))).toEqual([]);
+  }
+});
+
+test("header account menu switches stores and returns to login", async ({ page }) => {
+  for (const route of ["index", "products"]) {
+    await page.goto(`/${route}.html`);
+    const account = page.getByRole("button", { name: "帳戶選單" });
+    await expect(account).toContainText("C");
+    await account.click();
+    await page.getByRole("menuitem", { name: "切換商店" }).click();
+    await expect(page).toHaveURL(/\/select-store\.html$/);
+    await expect(page.getByRole("heading", { name: "請選擇商店" })).toBeVisible();
+    await page.goto(`/${route}.html`);
+    await page.getByRole("button", { name: "帳戶選單" }).focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("menuitem", { name: "登出", exact: true }).click();
+    await expect(page).toHaveURL(/\/login\.html$/);
+    await expect(page.getByRole("button", { name: "使用 Google 帳戶登入" })).toBeVisible();
+  }
+});
 test("transaction detail estimates tool fees with a minimum and five decimal places", async ({page}) => {
   await page.goto("/transaction-detail.html?order=202610080050006");
   const summary = field(page,"payment-summary");
@@ -20,10 +63,24 @@ for (const route of ["stores", "projects"]) {
   test(`${route} fee inputs follow tool availability in new, edit and view dialogs`, async ({page}) => {
     await page.goto(`/${route}.html`);
     await app(page).getByRole("button", {name:"管理手續費",exact:true}).first().click();
+    await expect(app(page).locator(".el-table")).toHaveCount(1);
+    await expect(app(page).getByRole("columnheader", {name:"設定狀態",exact:true})).toBeVisible();
+    await expect(app(page).getByRole("columnheader", {name:"費率生效狀態",exact:true})).toBeVisible();
+    await expect(app(page).getByRole("columnheader", {name:"設定方式",exact:true})).toHaveCount(0);
+    await expect(page.locator("#controller-source .effective-fee-table")).toHaveCount(0);
     await app(page).getByRole("button", {name:"新增手續費率",exact:true}).click();
     let dialog = page.getByRole("dialog", {name:"新增手續費率",exact:true});
     let row = dialog.locator(".el-table__body tr").first();
-    await choose(page,row.locator(".el-select"),"自訂");
+    await expect(dialog.locator(".el-select")).toHaveCount(0);
+    await expect(dialog).not.toContainText("全站預設");
+    const globalFee = await page.evaluate(() => new window.SystemManagement.SystemManagement(window.SystemManagement.seed()).resolveFee(window.SystemManagement.seed().paymentTools[0].id).fee);
+    await expect(row.getByRole("spinbutton")).toHaveValue(String(globalFee));
+    for (const width of [1280, 390]) {
+      await page.setViewportSize({width, height: 1000});
+      await expect(dialog).toBeVisible();
+      expect(await dialog.evaluate(node => node.scrollWidth <= node.clientWidth + 1)).toBe(true);
+    }
+    await page.setViewportSize({width:1280,height:1000});
     const toggle = row.locator(".el-switch");
     if (await row.getByRole("switch").getAttribute("aria-checked") === "false") await toggle.click();
     await expect(row.getByRole("spinbutton")).toBeEnabled();
@@ -100,7 +157,7 @@ test("demo login leads to store selection and keeps the selected store in manage
   await page.goto("/");
   await expect(page).toHaveURL(/\/login\.html$/);
   await expect(
-    page.getByRole("heading", { name: "行動支付支援平台" }),
+    page.getByRole("heading", { name: "行動支付支援平台 (Demo)", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "使用 Google 帳戶登入" }).click();
   await expect(page).toHaveURL(/\/select-store\.html$/);
@@ -437,14 +494,14 @@ test("payment fee versions retain history when revised through the edit modal", 
   expect(versions.filter((v) => !v.cancelledAt)).toHaveLength(2);
 });
 
-test("store and project batches inherit dynamically and preserve custom fees across reloads", async ({page}) => {
+test("store and project fees start from global rates and persist across reloads", async ({page}) => {
   await page.clock.setFixedTime(new Date("2026-10-19T04:00:00Z"));
   await page.goto("/stores.html");
   await app(page).getByRole("button",{name:"\u7ba1\u7406\u624b\u7e8c\u8cbb",exact:true}).first().click();
   await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
   let dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
   let credit = dialog.getByRole("row").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"});
-  await choose(page,credit.locator(".el-select"),"\u81ea\u8a02");
+  await expect(credit.locator(".el-select")).toHaveCount(0);
   await credit.getByRole("spinbutton").fill("2.5");
   await dialog.getByRole("button",{name:"\u78ba\u5b9a",exact:true}).click();
   await expect(dialog).toBeHidden();
@@ -454,9 +511,9 @@ test("store and project batches inherit dynamically and preserve custom fees acr
   await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
   dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
   credit = dialog.getByRole("row").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"});
-  await expect(credit).toContainText("2.5%");
-  await expect(credit).toContainText("\u5546\u5e97\u81ea\u8a02");
-  await choose(page,credit.locator(".el-select"),"\u81ea\u8a02");
+  const globalFee = await page.evaluate(() => new window.SystemManagement.SystemManagement(window.SystemManagement.seed()).resolveFee("credit-card").fee);
+  await expect(credit.getByRole("spinbutton")).toHaveValue(String(globalFee));
+  await expect(credit.locator(".el-select")).toHaveCount(0);
   await credit.getByRole("spinbutton").fill("3");
   await dialog.getByRole("button",{name:"\u78ba\u5b9a",exact:true}).click();
   await expect(dialog).toBeHidden();
@@ -509,8 +566,8 @@ test("new payment tools appear in inherited store and project batches", async ({
     await app(page).getByRole("button",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true}).click();
     dialog = page.getByRole("dialog",{name:"\u65b0\u589e\u624b\u7e8c\u8cbb\u7387",exact:true});
     const tool = dialog.getByRole("row").filter({hasText:"\u8857\u53e3\u652f\u4ed8"});
-    await expect(tool.locator(".el-select")).toContainText("\u7e7c\u627f");
-    await expect(tool).toContainText("2.2%");
+    await expect(tool.locator(".el-select")).toHaveCount(0);
+    await expect(tool.getByRole("spinbutton")).toHaveValue("2.2");
   }
 });
 
@@ -614,9 +671,9 @@ test("project profiles and fee versions mirror stores and inherit store rates", 
   await app(page).getByRole("button",{name:"新增手續費率",exact:true}).click();
   let dialog = page.getByRole("dialog",{name:"新增手續費率",exact:true});
   const credit = dialog.getByRole("row").filter({hasText:"國內信用卡一次付清"});
-  await expect(credit.getByRole("spinbutton")).toHaveValue("1.25");
-  await expect(credit.getByRole("spinbutton")).toBeDisabled();
-  await choose(page,credit.locator(".el-select"),"自訂");
+  const globalFee = await page.evaluate(() => new window.SystemManagement.SystemManagement(window.SystemManagement.seed()).resolveFee("credit-card").fee);
+  await expect(credit.getByRole("spinbutton")).toHaveValue(String(globalFee));
+  await expect(credit.locator(".el-select")).toHaveCount(0);
   await expect(credit.getByRole("spinbutton")).toBeEnabled();
   await expect(dialog.getByRole("columnheader", {name:"費率來源", exact:true})).toHaveCount(0);
   await credit.getByRole("spinbutton").fill("1.75");

@@ -797,16 +797,11 @@
       const start = v.effectiveAt.startsWith("1970-") ? "既有設定" : feeDate(v.effectiveAt);
       const end = v.endsAt ? feeDate(v.endsAt) : "無期限";
       const enabled = !v.cancelledAt && v.enabled !== false;
-      const expired = v.endsAt && new Date(v.endsAt) <= new Date();
       const effectiveStatus = app.storeFeeState(id,v);
       const reason = v.cancelledAt ? "此版本已取消或被修訂" : !enabled ? "此版本已停用" : effectiveStatus === "未套用" && current ? `ID ${versions.length-versions.findIndex(n=>n.id===current.id)} 的手續費開始時間較近，目前優先套用` : "";
       return `<tr><td>${versions.length-offset-i}</td><td>${enabled ? "啟用" : "停用"}</td><td><span title="${esc(reason)}">${effectiveStatus}</span></td><td>${start}</td><td>${end}</td><td>${feeDate(v.createdAt)}</td><td>${button("編輯","store-fee-revise",attrs + (!app.allowed(scope,id,"fees","edit") || v.cancelledAt || effectiveStatus === "已結束" ? " disabled" : ""))}${button("檢視","store-fee-view",attrs)}</td></tr>`;
     }).join("");
-    const effectiveRows = app.data.paymentTools.map(tool => {
-      const rate = app.resolveFee(tool.id,ownFeeOptions(scope,id));
-      return `<tr><td>${esc(tool.name)}</td><td>${current?.entries[tool.id]?.mode === "custom" ? "自訂" : "繼承"}</td><td>${feeText(rate)}</td><td>${feeSource(rate)}</td></tr>`;
-    }).join("");
-    main.querySelector("#sys-content").innerHTML = `<div class="store-page-heading"><div>${button("返回","cancel")}<h2>${esc(feeTargetName(scope,id))}</h2></div></div><h3>手續費率</h3><div class="store-fee-heading">${storeFeePager(versions.length)}${app.allowed(scope,id,"fees","edit") ? button("新增手續費率","store-fee-new",`data-id="${esc(id)}"`,"success") : ""}</div>${!current ? `<p class="store-fee-fallback">目前${scope === "project" ? "繼承商店費率" : "套用系統費率"}</p>` : ""}${table(["ID","設定狀態","費率生效狀態","手續費開始時間","手續費結束時間","設定時間","功能"], rows || `<tr><td colspan="7" class="empty">尚無${scope === "project" ? "專案" : "商店"}費率版本</td></tr>`, "store-fee-versions-table")}${table(["支付工具","設定方式","目前生效費率","來源"],effectiveRows,"effective-fee-table")}`;
+    main.querySelector("#sys-content").innerHTML = `<div class="store-page-heading"><div>${button("返回","cancel")}<h2>${esc(feeTargetName(scope,id))}</h2></div></div><h3>手續費率</h3><div class="store-fee-heading">${storeFeePager(versions.length)}${app.allowed(scope,id,"fees","edit") ? button("新增手續費率","store-fee-new",`data-id="${esc(id)}"`,"success") : ""}</div>${!current ? `<p class="store-fee-fallback">目前${scope === "project" ? "繼承商店費率" : "套用系統費率"}</p>` : ""}${table(["ID","設定狀態","費率生效狀態","手續費開始時間","手續費結束時間","設定時間","功能"], rows || `<tr><td colspan="7" class="empty">尚無${scope === "project" ? "專案" : "商店"}費率版本</td></tr>`, "store-fee-versions-table")}`;
   }
 
   function storesForMember(el, list) {
@@ -1439,10 +1434,10 @@
     const end = selected?.endsAt || "";
     const title = readonly ? "檢視手續費率" : versionId ? "編輯手續費率" : "新增手續費率";
     const rows = tools.map(t => {
-      const entry = selected?.entries[t.id];
-      const parent = app.resolveFee(t.id, {...parentFeeOptions(scope,target), at: readonly ? selected.effectiveAt : start});
+      const entry = versionId ? selected?.entries[t.id] : undefined;
+      const parent = app.resolveFee(t.id);
       const fee = entry?.mode === "custom" ? entry.fee : parent.fee;
-      return `<tr><td>${esc(t.name)}</td><td><input type="checkbox" data-switch name="enabled-${esc(t.id)}" aria-label="${esc(t.name)}啟用" ${(entry?.mode === "custom" ? entry.enabled !== false : parent.enabled !== false) ? "checked" : ""} ${fixed ? "disabled" : ""}></td><td><select name="mode-${esc(t.id)}" aria-label="${esc(t.name)}設定方式" ${fixed ? "disabled" : ""}>${options([["inherit","繼承"],["custom","自訂"]],entry?.mode || "inherit")}</select><small>${feeText(parent)} ? ${feeSource(parent)}</small><div class="fee-value"><input name="fee-${esc(t.id)}" aria-label="${esc(t.name)}手續費率" type="number" min="0" ${t.unit === "%" ? 'max="100"' : ""} step="0.000001" required value="${esc(fee ?? "")}" ${fixed ? "disabled" : ""}><span>${esc(t.unit)}</span></div></td></tr>`;
+      return `<tr><td>${esc(t.name)}</td><td><input type="checkbox" data-switch name="enabled-${esc(t.id)}" aria-label="${esc(t.name)}啟用" ${(entry?.mode === "custom" ? entry.enabled !== false : parent.enabled !== false) ? "checked" : ""} ${fixed ? "disabled" : ""}></td><td><div class="fee-value"><input name="fee-${esc(t.id)}" aria-label="${esc(t.name)}手續費率" type="number" min="0" ${t.unit === "%" ? 'max="100"' : ""} step="0.000001" required value="${esc(fee ?? "")}" ${fixed ? "disabled" : ""}><span>${esc(t.unit)}</span></div></td></tr>`;
     }).join("");
     const dialog = createDialog("fee-schedule-dialog", "fee-schedule-title", `<h2 id="fee-schedule-title">${title}</h2><form id="store-fee-modal-form"><div class="sys-payment-fields store-fee-dates"><label><span>狀態</span><div><input type="checkbox" data-switch name="versionEnabled" aria-label="費率版本狀態" ${(versionId ? selected?.enabled !== false : true) ? "checked" : ""} ${statusFixed ? "disabled" : ""}></div></label><label><span><em>*</em> 手續費率開始時間</span><input name="effectiveAt" aria-label="手續費率開始時間" type="datetime-local" step="1" required value="${feeDate(start).replace(" ","T")}" ${fixed ? "disabled" : ""}></label><label><span>手續費率結束時間</span><div class="store-fee-end-controls"><input name="endsAt" aria-label="手續費率結束時間" type="datetime-local" step="1" value="${end ? feeDate(end).replace(" ","T") : ""}" ${endFixed ? "disabled" : ""}>${endFixed ? "" : button("無期限","store-fee-unlimited")}</div></label></div><div class="store-fee-settings-row"><span class="store-fee-settings-label">設定費率</span><div class="store-fee-settings-content">${table(["支付工具","啟用","手續費率"],rows,"store-fee-modal-table")}</div></div>${selected?.endChanges?.length ? `<div class="store-fee-status-history">${selected.endChanges.map(change=>`<p>結束時間：${change.from ? feeDate(change.from) : "無期限"} → ${change.to ? feeDate(change.to) : "無期限"} · ${esc(change.by)} · ${feeDate(change.at)}</p>`).join("")}</div>` : ""}${selected?.statusChanges?.length ? `<div class="store-fee-status-history">${selected.statusChanges.map(change => `<p>${change.enabled ? "啟用" : "停用"}：${esc(change.by)} · ${feeDate(change.at)}</p>`).join("")}</div>` : ""}<p class="sys-error" role="alert"></p><div class="sys-modal-actions">${readonly ? "" : button("取消","fee-close")}<button type="${readonly ? "button" : "submit"}" ${readonly ? 'data-action="fee-close"' : ""} class="btn primary">確定</button></div></form>`, closeFeeSchedule);
     const form = dialog.querySelector("form");
@@ -1453,13 +1448,11 @@
     });
     const syncToolFeeDisabled = () => {
       for (const tool of tools) {
-        form.elements[`fee-${tool.id}`].disabled = fixed || form.elements[`mode-${tool.id}`].value === "inherit" || !form.elements[`enabled-${tool.id}`].checked;
+        form.elements[`fee-${tool.id}`].disabled = fixed || !form.elements[`enabled-${tool.id}`].checked;
       }
     };
     syncToolFeeDisabled();
-    form.addEventListener("change", event => {
-      syncToolFeeDisabled();
-    });
+    form.addEventListener("change", syncToolFeeDisabled);
     form.addEventListener("submit", e => {
       e.preventDefault();
       if (readonly) return;
@@ -1467,7 +1460,7 @@
         try {
           if (locked) commitFeeChange(() => app.updateStoreFeeControls(target,versionId,{enabled:form.elements.versionEnabled.checked,...(state === "生效中" ? {endsAt:form.elements.endsAt.value || null} : {})},new Date(),scope));
           else {
-            const entries = Object.fromEntries(tools.map(t => [t.id,{mode:form.elements[`mode-${t.id}`].value,fee:form.elements[`fee-${t.id}`].value,enabled:form.elements[`enabled-${t.id}`].checked}]));
+            const entries = Object.fromEntries(tools.map(t => [t.id,{mode:"custom",fee:form.elements[`fee-${t.id}`].value,enabled:form.elements[`enabled-${t.id}`].checked}]));
             commitFeeChange(() => app.saveFeeVersion(scope,target,{id:editing ? versionId : undefined, enabled:form.elements.versionEnabled.checked, effectiveAt:form.elements.effectiveAt.value, endsAt:form.elements.endsAt.value || undefined, entries}));
           }
           if (!versionId) feePage = 1;

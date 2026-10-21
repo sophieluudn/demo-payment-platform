@@ -88,16 +88,4 @@
 
   update();
   window.addEventListener("pageshow", update);
-  const exportButton = document.createElement("button");
-  exportButton.type = "button";
-  exportButton.className = "btn plain";
-  exportButton.textContent = "匯出交易 CSV";
-  exportButton.dataset.permissionAction = "export";
-  exportButton.addEventListener("click", () => {
-    const records = window.transactionOrders.filter(order => PaymentAccess.allows(order,"transactions","export"));
-    const csv = "\uFEFF" + records.map(order => [order[0],order[14],order[7]].map(v => `"${String(v).replaceAll('"','""')}"`).join(",")).join("\r\n");
-    const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-    const link = document.createElement("a"); link.href = url; link.download = "transactions.csv"; link.click(); URL.revokeObjectURL(url);
-  });
-  document.querySelector("main")?.append(exportButton);
 })();

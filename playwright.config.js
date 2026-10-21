@@ -1,4 +1,4 @@
-const { defineConfig, devices } = require("@playwright/test");
+const { defineConfig } = require("@playwright/test");
 
 // ───────────────────────── 1. 基礎設定 ─────────────────────────
 const PORT = 4173;

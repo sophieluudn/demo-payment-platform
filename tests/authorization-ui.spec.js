@@ -91,17 +91,12 @@ test("platform metadata and fee permissions have separate editing paths",async({
   await expect(dialog).toBeHidden();
   await expect(app(page)).toContainText("新工具名稱");
 });
-test("transaction CSV includes only targets with export permission",async({page})=>{
+test("transaction CSV button is absent even with export permission",async({page})=>{
   const data=migrate(seed()),admin=new Model(data);
   const r=admin.saveRole({name:"A export",store:"edu",project:"A",permissions:{transactions:["view","export"]}});
   data.users.push({id:"export",name:"export",login:"export",grants:{A:r.id,B:"viewer"}});
   await session(page,data,"export"); await page.goto("/transactions.html");
-  const downloadPromise=page.waitForEvent("download");
-  await app(page).getByRole("button",{name:"匯出交易 CSV",exact:true}).click();
-  const download=await downloadPromise;
-  const csv=require("node:fs").readFileSync(await download.path(),"utf8");
-  expect(csv).toContain('"A"'); expect(csv).not.toContain('"B"');
-  expect(csv).not.toContain("202610080050006");
+  await expect(app(page).getByRole("button",{name:"匯出交易 CSV",exact:true})).toHaveCount(0);
 });
 test("global authorization is explicit and does not turn a user into system administrator",async({page})=>{
   await page.goto("/users.html");
@@ -132,7 +127,7 @@ test("global authorization is explicit and does not turn a user into system admi
     if (width === 390) expect((await page.locator('.el-dialog .ep-role-permission-grid').boundingBox()).width).toBeGreaterThan(280);
   }
 });
-test("project fee viewer sees effective inheritance and cannot edit versions",async({page})=>{
+test("project fee viewer sees versions and cannot edit fees",async({page})=>{
   const data=migrate(seed()),admin=new Model(data);
   const r=admin.saveRole({name:"A fee reader",store:"edu",project:"A",permissions:{projects:["view"],fees:["view"]}});
   data.users.push({id:"fee-reader",name:"reader",login:"reader",grants:{A:r.id}});
@@ -140,7 +135,8 @@ test("project fee viewer sees effective inheritance and cannot edit versions",as
   admin.saveFeeVersion("project","A",{entries,effectiveAt:"2026-12-01T00:00"},new Date("2026-10-01T00:00+08:00"));
   await session(page,data,"fee-reader"); await page.goto("/projects.html");
   await app(page).getByRole("button",{name:"管理手續費",exact:true}).click();
-  await expect(app(page)).toContainText("全站預設");
+  await expect(app(page).getByRole("columnheader",{name:"費率生效狀態",exact:true})).toBeVisible();
+  await expect(app(page).getByRole("columnheader",{name:"設定方式",exact:true})).toHaveCount(0);
   await expect(app(page).getByRole("button",{name:"新增手續費率",exact:true})).toHaveCount(0);
   await expect(app(page).getByRole("button",{name:"編輯",exact:true})).toHaveCount(0);
   await app(page).getByRole("button",{name:"檢視",exact:true}).first().click();
