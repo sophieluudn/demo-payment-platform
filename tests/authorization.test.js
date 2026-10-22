@@ -32,7 +32,7 @@ test("grantability is checked on every target; built-in refund role has no excep
   assert.throws(()=>manager.saveUser({mode:"edit",id:"admin",grants:{A:"viewer"}}));
   const own=manager.saveRole({name:"A independent",store:"edu",project:"A",permissions:{transactions:["view"]}});
   assert.throws(()=>admin.saveUser({mode:"edit",id:"david",grants:{B:own.id}}));
-  assert.throws(()=>manager.saveRole({id:"viewer",name:"Changed",store:"",permissions:{}}),/獨立角色/);
+  assert.throws(()=>manager.saveRole({id:"viewer",name:"Changed",store:"",permissions:{}}),/個別商店/);
   assert.throws(()=>manager.saveRole({name:"store common",store:"edu",permissions:{}}));
 });
 test("role edits check every assignment including disabled users; self authority cannot be escalated",()=>{
@@ -43,10 +43,11 @@ test("role edits check every assignment including disabled users; self authority
   const mgr=make("whole manager",{roles:["view","edit"],transactions:["view"]});
   const m=user("role-owner",{}, {edu:mgr.id});
   m.saveRole({...r,note:"allowed"});
-  const other=make("cross manager",{roles:["view","edit"],transactions:["view"]},"");
-  const cross=admin.saveRole({name:"cross common",permissions:{transactions:["view"]}});
-  admin.saveUser({mode:"edit",id:"cross",grants:{A:cross.id,C:cross.id}});
-  const platform=user("platform-roles",{}, {},[other.id]);
+  const other=make("cross manager",{roles:["view","edit"],transactions:["view"]},"u");
+  const cross=admin.saveRole({name:"cross local",store:"u",permissions:{transactions:["view"]}});
+  assert.throws(()=>admin.saveUser({mode:"edit",id:"cross",grants:{A:cross.id,C:cross.id}}));
+  admin.saveUser({mode:"edit",id:"cross",grants:{C:cross.id}});
+  const platform=user("store-roles",{}, {u:other.id});
   data.roles.find(x=>x.id===other.id).permissions.roles=[];
   assert.throws(()=>platform.saveRole({...cross,note:"no"}));
   assert.throws(()=>m.saveRole({...mgr,permissions:{...mgr.permissions,transactions:["view","refund"]}}));
@@ -56,7 +57,7 @@ test("explicit revocation survives reload and omitted grants survive migration",
   admin.saveUser({mode:"edit",id:"cross",grants:{A:null}});
   const copy=migrate(JSON.parse(JSON.stringify(data))); migrate(copy);
   const u=copy.users.find(u=>u.id==="cross");
-  assert.deepEqual(u.grants,{C:"viewer"});
+  assert.deepEqual(u.grants,{C:"viewer--store-u"});
   const m=new Model(copy,"cross");
   assert.equal(m.can("A","transactions","view"),false);
   assert.equal(m.can("C","transactions","view"),true);
@@ -88,9 +89,11 @@ test("ordinary functional permissions allow scoped mutations; platform actions n
   assert.throws(()=>scoped.saveStore({name:"no"}));
   assert.equal(scoped.can("A","payments","edit"),false);
   whole.saveProject({store:"edu",name:"yes"}); whole.saveStore({id:"edu",name:"yes"});
-  const platformRole=make("platform",{stores:["view","edit"],payments:["view","edit"],fees:["view","edit"]},"");
-  const platform=user("platform",{},{},[platformRole.id]);
-  platform.saveStore({name:"platform-created"}); platform.setFee("atm","8");
+  assert.throws(()=>make("platform",{payments:["view","edit"]},""),/個別商店/);
+  assert.throws(()=>whole.saveStore({name:"platform-created"}));
+  assert.throws(()=>whole.setFee("atm","8"));
+  const system=new Model(data);
+  system.saveStore({name:"platform-created"}); system.setFee("atm","8");
   assert.equal(data.fees.atm,"8");
 });
 test("fee scope boundaries and snapshots remain intact with live inheritance",()=>{
@@ -118,7 +121,7 @@ test("transaction view, refund, report and export rights are independently scope
   assert.throws(()=>m.assertTransaction({projectId:"A"},"transactions","refund"));
   assert.throws(()=>m.assertTransaction({projectId:"A"},"transactions","export"));
   m.assertTransaction({projectId:"B"},"transactions","refund");
-  m.assertTransaction({projectId:"B"},"transactions","export");
+  assert.throws(()=>m.assertTransaction({projectId:"B"},"transactions","export"));
   assert.equal(m.transactionAllowed({projectId:"B"},"reports"),false);
   assert.equal(m.transactionAllowed({}),false);
   assert.equal(m.transactionAllowed({projectId:"C"}),false);
@@ -182,14 +185,14 @@ test("account state controls require every scope while scoped grant revocation r
   assert.equal(partial.canChangeUserState("cross"),false);
   assert.equal(admin.canChangeUserState("cross"),true);
   partial.saveUser({mode:"edit",id:"cross",grants:{A:null}});
-  assert.deepEqual(data.users.find(u=>u.id==="cross").grants,{C:"viewer"});
+  assert.deepEqual(data.users.find(u=>u.id==="cross").grants,{C:"viewer--store-u"});
 });
 
 test("platform assignments validate their representation and do not retain caller references",()=>{
   const {data,admin}=setup();
   assert.throws(()=>admin.saveUser({mode:"edit",id:"charlie",platformRoles:"viewer"}),/角色陣列/);
   const submitted=["viewer"];
-  admin.saveUser({mode:"edit",id:"charlie",platformRoles:submitted});
+  assert.throws(()=>admin.saveUser({mode:"edit",id:"charlie",platformRoles:submitted}));
   submitted.push("large");
-  assert.deepEqual(data.users.find(u=>u.id==="charlie").platformRoles,["viewer"]);
+  assert.deepEqual(data.users.find(u=>u.id==="charlie").platformRoles || [],[]);
 });

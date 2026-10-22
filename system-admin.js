@@ -414,8 +414,8 @@
   function roles(el) {
     const list = app.data.roles.filter(
       (role) =>
-        (!roleStore || !role.store || role.store === roleStore) &&
-        (app.isSystem || app.stores("roles").some(s => !role.store || role.store === s.id)) &&
+        (!roleStore || role.store === roleStore) &&
+        (app.isSystem || app.stores("roles").some(s => role.store === s.id)) &&
         (!role.project || app.can(role.project,"roles","view")) && matches(role.name),
     );
     const canCreate = app.isSystem || app.stores("roles","create").length > 0;
@@ -429,7 +429,7 @@
       row: (role, index) => {
         let canEdit = false;
         try { app.assertRoleEditable(role); canEdit = true; } catch { /* show read-only */ }
-        const scopeLabel = role.project ? `${storeName(role.store)}／指定專案：${projectById(role.project)?.name}` : role.store ? `${storeName(role.store)}／商店共用` : "平台共用（適用全部商店）";
+        const scopeLabel = role.project ? `${storeName(role.store)}／指定專案：${projectById(role.project)?.name}` : role.store ? storeName(role.store) : "舊角色未指定商店，請編輯修正";
         return `<tr><td>${(page - 1) * size + index + 1}</td><td>${esc(role.name)}</td><td>${esc(scopeLabel)}</td><td>${role.enabled === false ? "不啟用" : "啟用"}</td><td>${canEdit ? button("編輯", "edit-role", `data-id="${role.id}"`, "primary") : "唯讀；可建立獨立角色"}</td></tr>`;
       },
     });
@@ -437,16 +437,11 @@
 
   function roleEditor(id) {
     const role = app.role(id);
-    const scope = app.isSystem
-      ? (role?.store ?? (roleStore || ""))
-      : role?.store || roleStore || app.store;
+    const scope = enteredStore;
 
     if (role) { try { app.assertRoleEditable(role); } catch(error) { return toast(error.message); } }
 
-    const storeList = [
-      ...(app.canPlatform("roles","edit") ? [{id:"",name:"平台共用（全部商店）"}] : []),
-      ...app.stores("roles", "create"),
-    ];
+    const storeList = app.stores("roles", id ? "edit" : "create");
 
     window.openRoleModal({
       role,
@@ -458,7 +453,12 @@
       allowed: (store, feature, action, project) =>
         app.roleActionAllowed(store, feature, action, project),
       save: (input) => {
-        app.saveRole(input);
+        try { app.saveRole(input); }
+        catch (error) {
+          if (role && role.store !== input.store && app.roleTargets(role).length)
+            throw Error("變更商店會影響既有授權，請保留原角色並另建角色。");
+          throw error;
+        }
         saveAndRender("角色設定已儲存");
       },
     });
@@ -958,10 +958,7 @@
       .map((x) => [x, x]);
 
     const effectiveField = key
-      ? fieldLabel(
-          "手續費開始時間 (GMT+8)",
-          `<input name="effectiveAt" aria-label="手續費開始時間 (GMT+8)" type="datetime-local" step="1" required value="${pending ? feeDate(version.effectiveAt).replace(" ", "T") : ""}">`,
-        )
+      ? `<label><span>手續費開始時間 (GMT+8)</span><div><input name="effectiveAt" aria-label="手續費開始時間 (GMT+8)" type="datetime-local" step="1" value="${pending ? feeDate(version.effectiveAt).replace(" ", "T") : ""}"><small>留空立即生效；填入未來時間可排程生效。</small></div></label>`
       : "";
 
     const fields = [

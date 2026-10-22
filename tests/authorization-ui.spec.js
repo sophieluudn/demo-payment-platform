@@ -22,7 +22,7 @@ test("admin management defaults/reset to entered store and query never changes s
     await expect(filter).toContainText("教育事業部");
   }
   await page.goto("/roles.html");
-  await expect(app(page).getByRole("row").filter({hasText:"交易檢視角色"})).toContainText("平台共用");
+  await expect(app(page).getByRole("row").filter({hasText:"交易檢視角色"})).toContainText("教育事業部");
 });
 test("whole-store grant creation and explicit revocation persist after reload",async({page})=>{
   await page.goto("/users.html");
@@ -30,7 +30,7 @@ test("whole-store grant creation and explicit revocation persist after reload",a
   let dialog=page.getByRole("dialog",{name:"新增使用者",exact:true});
   await dialog.getByRole("textbox",{name:"姓名",exact:true}).fill("整店測試");
   await dialog.getByRole("textbox",{name:"Email 帳號",exact:true}).fill("whole@example.com");
-  await choose(page,dialog.locator(".el-select").filter({has:page.getByRole("combobox",{name:"專案",exact:true})}),"整店授權（含未來新增專案）");
+  await choose(page,dialog.locator(".el-select").filter({has:page.getByRole("combobox",{name:"專案",exact:true})}),"全部專案");
   await choose(page,dialog.locator(".el-select").filter({has:page.getByRole("combobox",{name:"角色",exact:true})}),"交易檢視角色");
   await dialog.getByRole("button",{name:"加入授權",exact:true}).click();
   await dialog.getByRole("button",{name:"確定",exact:true}).click();
@@ -77,19 +77,15 @@ test("inactive and invalid identities cannot enter management or select stores",
     await expect(page.getByRole("button",{name:"教育事業部",exact:true})).toHaveCount(0);
   }
 });
-test("platform metadata and fee permissions have separate editing paths",async({page})=>{
+test("store roles cannot grant platform metadata rights; system administrator retains access",async({page})=>{
   const data=migrate(seed()),admin=new Model(data);
-  const metadata=admin.saveRole({name:"metadata",permissions:{payments:["view","edit"]}});
-  data.users.push({id:"metadata",name:"metadata",login:"metadata",grants:{},platformRoles:[metadata.id]});
+  const metadata=admin.saveRole({name:"metadata",store:"edu",permissions:{payments:["view","edit"]}});
+  data.users.push({id:"metadata",name:"metadata",login:"metadata",grants:{},storeGrants:{edu:metadata.id}});
   await session(page,data,"metadata"); await page.goto("/payments.html");
-  await expect(app(page)).not.toContainText("手續費（含稅）");
-  await app(page).getByRole("button",{name:"編輯工具資料",exact:true}).first().click();
-  const dialog=page.getByRole("dialog",{name:"編輯支付工具",exact:true});
-  await expect(dialog.getByRole("spinbutton")).toHaveCount(0);
-  await dialog.getByRole("textbox",{name:"* 支付工具名稱",exact:true}).fill("新工具名稱");
-  await dialog.getByRole("button",{name:"確定",exact:true}).click();
-  await expect(dialog).toBeHidden();
-  await expect(app(page)).toContainText("新工具名稱");
+  await expect(app(page).getByRole("button",{name:"編輯工具資料",exact:true})).toHaveCount(0);
+  await session(page,data,"admin"); await page.goto("/payments.html");
+  await expect(app(page).getByRole('columnheader', {name:'手續費（含稅）',exact:true})).toBeVisible();
+  await expect(app(page).getByRole('link', {name:'編輯 國內信用卡一次付清',exact:true}).first()).toBeVisible();
 });
 test("transaction CSV button is absent even with export permission",async({page})=>{
   const data=migrate(seed()),admin=new Model(data);
@@ -98,15 +94,17 @@ test("transaction CSV button is absent even with export permission",async({page}
   await session(page,data,"export"); await page.goto("/transactions.html");
   await expect(app(page).getByRole("button",{name:"匯出交易 CSV",exact:true})).toHaveCount(0);
 });
-test("global authorization is explicit and does not turn a user into system administrator",async({page})=>{
+test("store authorization has no platform role option and does not turn a user into system administrator",async({page})=>{
   await page.goto("/users.html");
   await app(page).getByRole("button",{name:"新增",exact:true}).click();
   const dialog=page.getByRole("dialog",{name:"新增使用者",exact:true});
   await dialog.getByRole("textbox",{name:"姓名",exact:true}).fill("全域檢視");
   await dialog.getByRole("textbox",{name:"Email 帳號",exact:true}).fill("global@example.com");
   const select=name=>dialog.locator(".el-select").filter({has:page.getByRole("combobox",{name,exact:true})});
-  await choose(page,select("商店"),"全域授權（平台）");
-  await choose(page,select("專案"),"全域授權（含全部商店及專案）");
+  await select("商店").click();
+  await expect(page.getByRole("option",{name:"全域授權（平台）",exact:true})).toHaveCount(0);
+  await page.keyboard.press('Escape');
+  await choose(page,select("專案"),"全部專案");
   await choose(page,select("角色"),"交易檢視角色");
   await dialog.getByRole("button",{name:"加入授權",exact:true}).click();
   for (const width of [1440,390]) {
@@ -117,8 +115,9 @@ test("global authorization is explicit and does not turn a user into system admi
   await dialog.getByRole("button",{name:"確定",exact:true}).click();
   await expect(dialog).toBeHidden();
   const user=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).data.users.find(u=>u.login==="global@example.com"),STORAGE);
-  expect(user.platformRoles).toEqual(["viewer"]); expect(user.system).toBeUndefined(); expect(user.grants).toEqual({});
-  await expect(app(page).getByRole("row").filter({hasText:"全域檢視"})).toContainText("全域授權");
+  expect(user.platformRoles || []).toEqual([]); expect(user.system).toBeUndefined(); expect(user.grants).toEqual({});
+  expect(user.storeGrants).toEqual({edu:"viewer"});
+  await expect(app(page).getByRole("row").filter({hasText:"全域檢視"})).toContainText("整店授權");
   await page.goto("/roles.html");
   await app(page).getByRole("button",{name:"新增",exact:true}).click();
   for (const width of [1440,390]) {
@@ -157,7 +156,7 @@ test("partial user managers can revoke A while cross-store account state remains
   await expect(dialog).toBeHidden();
   await page.reload();
   const user=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).data.users.find(u=>u.id==="cross"),STORAGE);
-  expect(user.grants).toEqual({C:"viewer"});
+  expect(user.grants).toEqual({C:"viewer--store-u"});
   expect(user.enabled).not.toBe(false);
 });
 

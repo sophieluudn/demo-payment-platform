@@ -69,12 +69,12 @@ test("role matrix keeps only real actions and scope changes cannot invalidate gr
     d.saveRole({
       id: "viewer",
       name: "限定角色",
-      store: "edu",
+      store: "u",
       permissions: {},
     }),
   );
   d.saveUser({ mode: "edit", id: "cross", grants: { A: "refund" } });
-  assert.equal(d.data.users.find((u) => u.id === "cross").grants.C, "viewer");
+  assert.equal(d.data.users.find((u) => u.id === "cross").grants.C, "viewer--store-u");
   assert.throws(() =>
     d.saveUser({ mode: "edit", id: "cross", grants: { A: role.id } }),
   );
@@ -120,9 +120,9 @@ test("new/existing accounts preserve other stores; no platform directory for ord
   d.identity = "admin";
   d.normalize();
   d.switchStore("u");
-  d.saveUser({ mode: "existing", id: "david", grants: { C: "viewer" } });
+  d.saveUser({ mode: "existing", id: "david", grants: { C: "viewer--store-u" } });
   const david = d.data.users.find((u) => u.id === "david");
-  assert.deepEqual(david.grants, { B: "refund", C: "viewer" });
+  assert.deepEqual(david.grants, { B: "refund", C: "viewer--store-u" });
 });
 test("manager-only identity, partial manager editing, and own-grant changes are guarded", () => {
   const d = new SystemManagement(undefined, "big");
@@ -177,6 +177,7 @@ test("platform payment configuration requires platform scope, while project fees
   d.normalize();
   const r = d.saveRole({
     name: "Settings",
+    store: "edu",
     permissions: { fees: ["edit"], users: ["view"] },
   });
   assert.deepEqual(r.permissions.fees, ["create","edit"]);

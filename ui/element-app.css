@@ -1598,6 +1598,7 @@ body .el-button > span {
 .el-dialog :is(.ep-user-grants-row,.ep-role-permissions-row,.ep-store-fee-settings-row) > .modal-field-label {
   align-self:start; padding-top:10px;
 }
+.el-dialog .ep-role-permissions-row > .modal-field-label { padding-top:0; font-size:13px; line-height:1.6; }
 @media (width <=767px) {
   .el-dialog { --modal-label-width:90px; --modal-field-gap:12px; }
 }
@@ -1684,18 +1685,9 @@ body .el-button > span {
   display:inline-flex; align-items:center; justify-content:center;
 }
 .el-dialog :is(.ep-user-grant-add,.ep-user-grant-remove) > span { display:none; }
-.el-dialog .ep-user-grant-remove.ep-grant-revoke-label {
-  width: auto;
-  min-width: 108px;
-  padding: 0 12px;
-  border-radius: 4px;
-}
-.el-dialog .ep-user-grant-remove.ep-grant-revoke-label > span { display:inline; }
-@media (width >=768px) {
-  .ep-user-grant-saved:has(.ep-grant-revoke-label) { grid-template-columns:repeat(3,minmax(0,1fr)) 108px; }
-}
 @media (width <=767px) {
   .el-dialog .ep-role-setting-row.ep-role-permissions-row { grid-template-columns:minmax(0,1fr); }
+  .el-dialog .ep-role-permissions-row > .modal-field-label { text-align:left; }
   .el-dialog .ep-store-fee-settings-row[data-ui-tag] { grid-template-columns:minmax(0,1fr); gap:8px; }
   .el-dialog .ep-store-fee-settings-row > .modal-field-label { text-align:left; padding-top:0; }
   .ep-store-fee-modal-table.el-table .cell { padding-inline:8px; }

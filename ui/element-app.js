@@ -650,7 +650,7 @@ function renderButton(node) {
         ? "primary"
         : "default";
   const grantAction = node.matches(".user-grant-add,.user-grant-remove");
-  const hasText = (!grantAction || node.classList.contains("grant-revoke-label")) && text.length > 0 && text !== "+";
+  const hasText = !grantAction && text.length > 0 && text !== "+";
   const isPurePlusIcon = text === "+";
   const buttonIcon = node.matches(".user-grant-remove") ? Delete : grantAction || isPurePlusIcon ? Plus : undefined;
   const button = h(
@@ -658,7 +658,7 @@ function renderButton(node) {
     {
       ...propsFor(node),
       type,
-      circle: grantAction && !node.classList.contains("grant-revoke-label"),
+      circle: grantAction,
       disabled: node.disabled,
       size: node.closest("td") ? "default" : "large",
       icon: buttonIcon,

@@ -3,6 +3,21 @@ const STORAGE = "payment-system-management-v2";
 const app = (page) => page.locator("#element-app");
 const field = (page, id) => page.locator(`[data-source-id="${id}"]`);
 
+test("payment rate saves immediately without a scheduled date", async ({page}) => {
+  await page.goto("/payments.html");
+  await app(page).getByRole("link",{name:"編輯 國內信用卡一次付清",exact:true}).first().click();
+  const dialog = page.getByRole("dialog",{name:"編輯支付工具",exact:true});
+  await expect(dialog.locator(".el-date-editor input")).toHaveValue("");
+  await dialog.getByRole("spinbutton").fill("3.51");
+  await dialog.getByRole("button",{name:"確定",exact:true}).click();
+  await expect(dialog).toBeHidden();
+  const updated = app(page).getByRole("row").filter({hasText:"國內信用卡一次付清"}).filter({hasText:"3.51%"});
+  await expect(updated).toHaveCount(1);
+  await expect(updated).toContainText("啟用");
+  await page.reload();
+  await expect(updated).toHaveCount(1);
+});
+
 test("edited payment unit can be changed and persists", async ({page}) => {
   await page.goto("/payments.html");
   await app(page).getByRole("link").filter({hasText:"國內信用卡一次付清"}).first().click();
@@ -738,7 +753,8 @@ test("modal forms share horizontal labels and required markers on desktop and mo
       await page.setViewportSize({width,height:1000});
       await expect.poll(async()=>dialog.locator(".modal-field-label").evaluateAll(labels=>labels.filter(label=>{
         const style = getComputedStyle(label);
-        return style.textAlign !== "right" || (label.classList.contains("ep-required") && getComputedStyle(label,"::before").content !== '"*"');
+        const stackedPermissionLabel = innerWidth <= 767 && label.parentElement.classList.contains('ep-role-permissions-row');
+        return style.textAlign !== (stackedPermissionLabel ? "left" : "right") || (label.classList.contains("ep-required") && getComputedStyle(label,"::before").content !== '"*"');
       }).map(label=>label.textContent)),{message:`${route} labels at ${width}px`}).toEqual([]);
       await expect(dialog.locator(".modal-field-label.ep-required").first()).toBeVisible();
       const required = await page.locator('#controller-source dialog[open] input[required],#controller-source dialog[open] select[required],#controller-source dialog[open] textarea[required]').evaluateAll(inputs=>inputs.filter(input=>!input.closest("table")).map(input=>input.id));
@@ -747,7 +763,7 @@ test("modal forms share horizontal labels and required markers on desktop and mo
   }
 });
 
-test("roles use Element switches and partial permission checkboxes", async ({
+test("roles keep select-all unchecked for partial permissions", async ({
   page,
 }) => {
   await page.goto("/roles.html");
@@ -758,20 +774,58 @@ test("roles use Element switches and partial permission checkboxes", async ({
     .getByRole("textbox", { name: "角色名稱" })
     .fill("Element 測試角色");
   await dialog.locator('.el-checkbox[aria-label="使用者管理整組勾選"]').click();
+  await expect(dialog.getByRole("checkbox", { name: "使用者管理整組勾選", exact: true })).toBeChecked();
   await dialog.locator('.el-checkbox[aria-label="使用者管理新增 / 編輯"]').click();
   await expect(
     dialog.getByRole("checkbox", { name: "使用者管理整組勾選", exact: true }),
-  ).toBeChecked({ indeterminate: true });
+  ).not.toBeChecked();
+  await expect(dialog.getByRole("checkbox", { name: "使用者管理整組勾選", exact: true })).not.toBeChecked({ indeterminate: true });
+  await dialog.locator('.el-checkbox[aria-label="使用者管理新增 / 編輯"]').click();
+  await expect(dialog.getByRole("checkbox", { name: "使用者管理整組勾選", exact: true })).toBeChecked();
+  await dialog.locator('.el-checkbox[aria-label="使用者管理新增 / 編輯"]').click();
   await dialog.getByRole("button", { name: "確定", exact: true }).click();
   await expect(app(page)).toContainText("Element 測試角色");
   await page.reload();
   await expect(app(page)).toContainText("Element 測試角色");
 });
 
+test("role modal defaults to entered store and blocks moving an assigned store role", async ({page}) => {
+  await page.goto('/roles.html');
+  await choose(page, app(page).locator('[data-source-id="sys-role-store"]'), 'U 好學');
+  await app(page).getByRole('button', {name:'新增',exact:true}).click();
+  let dialog = page.getByRole('dialog', {name:'新增角色',exact:true});
+  await expect(dialog.locator('.el-select').first()).toContainText('教育事業部');
+  const alignment = await dialog.evaluate(element => {
+    const label = element.querySelector('.ep-role-permissions-row > .modal-field-label');
+    const help = element.querySelector('.ep-role-permission-help');
+    return Math.abs(label.getBoundingClientRect().top - help.getBoundingClientRect().top);
+  });
+  expect(alignment).toBeLessThan(2);
+  await dialog.getByRole('button', {name:'取消',exact:true}).click();
+  await app(page).getByRole('button', {name:'清除',exact:true}).click();
+  const row = app(page).getByRole('row').filter({has:page.getByText('交易檢視角色', {exact:true})});
+  await row.getByRole('button', {name:'編輯',exact:true}).click();
+  dialog = page.getByRole('dialog', {name:'編輯角色',exact:true});
+  await expect(dialog.locator('.el-select').first()).toContainText('教育事業部');
+  const prior = await page.evaluate(key => JSON.parse(localStorage.getItem(key)).data.roles.find(role => role.id === 'viewer'), STORAGE);
+  await choose(page, dialog.locator('.el-select').first(), 'U 好學');
+  await dialog.getByRole('textbox', {name:'角色名稱',exact:true}).fill('共用角色變更測試');
+  await dialog.getByRole('button', {name:'確定',exact:true}).click();
+  await expect(dialog).toContainText('變更商店會影響既有授權，請保留原角色並另建角色。');
+  expect(await page.evaluate(key => JSON.parse(localStorage.getItem(key)).data.roles.find(role => role.id === 'viewer'), STORAGE)).toEqual(prior);
+});
+
 test("expanded role modal preserves selections across stores and edit, and enforces navigation", async ({ page }) => {
   await page.goto("/roles.html");
   await app(page).getByRole("button", { name:"新增", exact:true }).click();
   let dialog = page.getByRole("dialog", { name:"新增角色" });
+  await expect(dialog.locator('.el-select').first()).toContainText('教育事業部');
+  await expect(dialog.getByRole('combobox', {name:'角色適用範圍',exact:true})).toHaveCount(0);
+  await expect(dialog.getByText('依選單設定功能權限', {exact:true})).toBeVisible();
+  await expect(dialog.getByRole('checkbox', {name:'所有交易紀錄匯出',exact:true})).toHaveCount(0);
+  await dialog.locator('.el-select').first().click();
+  await expect(page.getByRole('option').filter({hasText:'平台共用'})).toHaveCount(0);
+  await page.keyboard.press('Escape');
   await dialog.getByRole("textbox", { name:"角色名稱", exact:true }).fill("標籤編輯人員");
   await expect(dialog.getByRole("checkbox", {name:"首頁檢視",exact:true})).toHaveCount(0);
   for (const label of ["標籤管理檢視", "標籤管理新增 / 編輯", "對帳單檢視", "對帳單封存"])

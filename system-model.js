@@ -1,15 +1,15 @@
 (function (root) {
   "use strict";
   const actions = {
-    transactions: ["view", "refund", "export"],
+    transactions: ["view", "refund"],
     products: ["view", "create", "edit", "delete"],
     tags: ["view", "create", "edit"],
     reports: ["view", "export"],
     statements: ["view", "create", "edit", "archive", "export"],
     users: ["view", "create", "edit"],
     roles: ["view", "create", "edit"],
-    projects: ["view", "create", "edit"],
-    stores: ["view", "create", "edit"],
+    projects: ["view", "create", "edit", "feeEdit"],
+    stores: ["view", "create", "edit", "feeEdit"],
     payments: ["view", "create", "edit"],
     fees: ["view", "create", "edit"],
   };
@@ -18,7 +18,7 @@
     tags: "標籤管理", reports: "商品交易統計", statements: "對帳單",
     users: "使用者管理", roles: "角色管理", projects: "專案管理", stores: "商店管理",
     fees: "費率管理", payments: "支付工具設定", view: "檢視", create: "新增", edit: "編輯", createEdit: "新增 / 編輯",
-    delete: "刪除", refund: "退款", archive: "封存", export: "匯出",
+    delete: "刪除", refund: "退款", archive: "封存", export: "匯出", feeEdit: "新增 / 編輯手續費率",
   };
   const uid = (prefix) =>
     prefix +
@@ -52,7 +52,7 @@
       Object.fromEntries(
         Object.entries(actions).map(([feature, list]) => [feature, [...list]]),
       );
-    return {
+    return isolateStoreRoles({
       stores: [
         { id: "edu", name: "教育事業部" },
         { id: "u", name: "U 好學" },
@@ -149,11 +149,98 @@
       ],
       paymentTools: paymentDefaults().map(({ fee, ...tool }) => tool),
       fees: Object.fromEntries(paymentDefaults().map((t) => [t.id, t.fee])),
+    });
+  }
+  // Materialize former shared roles only where an existing grant used them.
+  // IDs and permissions stay distinct across stores; no same-name role is merged.
+  function isolateStoreRoles(data) {
+    const ids = value => Array.isArray(value) ? value : value ? [value] : [];
+    const stores = new Set(data.stores.map(store => store.id));
+    const mappings = new Map();
+    for (const role of [...data.roles]) {
+      if (role.store) continue;
+      const used = new Set();
+      for (const user of data.users) {
+        for (const [projectId, assigned] of Object.entries(user.grants || {})) {
+          const project = data.projects.find(project => project.id === projectId);
+          if (project && ids(assigned).includes(role.id) && (!role.project || role.project === project.id)) used.add(project.store);
+        }
+        for (const [store, assigned] of Object.entries(user.storeGrants || {})) {
+          if (!role.project && ids(assigned).includes(role.id)) used.add(store);
+        }
+        if (!role.project && ids(user.platformRoles).includes(role.id)) data.stores.forEach(store => used.add(store.id));
+      }
+      const targets = data.stores.filter(store => used.has(store.id));
+      if (!targets.length) { role.legacyUnscoped = true; continue; }
+      const original = structuredClone(role);
+      const byStore = new Map();
+      for (const [index, store] of targets.entries()) {
+        let id = original.id;
+        if (index) {
+          const base = `${original.id}--store-${encodeURIComponent(store.id)}`;
+          id = base;
+          for (let suffix = 2; data.roles.some(item => item.id === id); suffix++) id = `${base}-${suffix}`;
+        }
+        const local = {...structuredClone(original), id, store:store.id, originRoleId:original.originRoleId || original.id};
+        delete local.legacyUnscoped;
+        let name = local.name;
+        for (let suffix = 1; data.roles.some(item => item.id !== role.id && item.store === store.id && (item.project || '') === (local.project || '') && item.name === name); suffix++) name = `${local.name}（原共用角色${suffix > 1 ? suffix : ''}）`;
+        local.name = name;
+        if (index) data.roles.push(local); else { Object.assign(role, local); delete role.legacyUnscoped; }
+        byStore.set(store.id, id);
+      }
+      mappings.set(original.id, byStore);
+    }
+    const replace = (value, store) => {
+      const values = ids(value).map(id => mappings.get(id)?.get(store) || id);
+      return Array.isArray(value) ? values : values[0];
     };
+    for (const user of data.users) {
+      for (const [projectId, assigned] of Object.entries(user.grants || {})) {
+        const store = data.projects.find(project => project.id === projectId)?.store;
+        if (store) user.grants[projectId] = replace(assigned, store);
+      }
+      for (const [store, assigned] of Object.entries(user.storeGrants || {})) if (stores.has(store)) user.storeGrants[store] = replace(assigned, store);
+      if (Array.isArray(user.grantBatches)) user.grantBatches = user.grantBatches.flatMap(batch => {
+        if (!mappings.has(batch.role)) return [batch];
+        const groups = new Map();
+        for (const projectId of batch.projects || []) {
+          const store = data.projects.find(project => project.id === projectId)?.store;
+          const role = mappings.get(batch.role).get(store);
+          const key = role || batch.role;
+          if (!groups.has(key)) groups.set(key, {...batch, role:key, store:store || batch.store, projects:[]});
+          groups.get(key).projects.push(projectId);
+        }
+        if (!groups.size) return [batch];
+        return [...groups.values()].map((item,index) => ({...item,id:index ? `${batch.id}--store-${encodeURIComponent(item.store)}` : batch.id}));
+      });
+      if (ids(user.platformRoles).length) {
+        // Former platform access becomes separate grants for existing stores only.
+        // Platform configuration remains reserved for system administrators.
+        for (const id of ids(user.platformRoles)) for (const [store, localId] of mappings.get(id) || []) {
+          user.storeGrants ||= {};
+          const combined = [...new Set([...ids(user.storeGrants[store]), localId])];
+          user.storeGrants[store] = combined.length === 1 ? combined[0] : combined;
+        }
+        user.legacyPlatformRoles = [...new Set([...ids(user.legacyPlatformRoles), ...ids(user.platformRoles)])];
+        user.platformRoles = [];
+      }
+    }
+    return data;
+  }
+  function upgradeFeePermissions(role) {
+    if (role.feePermissionVersion === 1 || (role.permissionVersion || 0) < 3) return;
+    if (role.permissions?.fees?.some(action => action === "create" || action === "edit")) {
+      for (const feature of role.project ? ["projects"] : ["projects", "stores"]) {
+        role.permissions[feature] = [...new Set([...(role.permissions[feature] || []), "feeEdit"])];
+      }
+    }
+    role.feePermissionVersion = 1;
   }
   class SystemManagement {
     constructor(data = seed(), identity = "admin", store = "edu") {
-      this.data = data;
+      this.data = isolateStoreRoles(data);
+      this.data.roles.forEach(upgradeFeePermissions);
       this.identity = identity;
       this.store = store;
       initializeFeeVersions(this.data);
@@ -166,11 +253,11 @@
     get isSystem() { return this.active && this.user.system === true; }
     role(id) { return this.data.roles.find(r => r.id === id); }
     roleApplies(role, scope, target) {
-      if (!role || role.enabled === false) return false;
-      if (scope === "platform") return !role.store && !role.project;
+      if (!role || role.enabled === false || !role.store) return false;
+      if (scope === "platform") return false;
       const p = scope === "project" && this.data.projects.find(p => p.id === target);
       const store = p ? p.store : target;
-      return (!role.store || role.store === store) && (!role.project || (scope === "project" && role.project === target));
+      return role.store === store && (!role.project || (scope === "project" && role.project === target));
     }
     roleIds(value) { return Array.isArray(value) ? value : value ? [value] : []; }
     rolesAt(user, scope, target) {
@@ -192,6 +279,12 @@
       if (scope === "project" && !this.data.projects.some(p => p.id === target)) return false;
       if (!["platform", "store", "project"].includes(scope)) return false;
       if (this.isSystem) return true;
+      if (feature === "fees" && scope !== "platform") {
+        const parent = scope === "project" ? "projects" : "stores";
+        return this.rolesAt(this.user, scope, target).some(role => action === "view"
+          ? this.hasAction(role, parent, "view") || this.hasAction(role, parent, "feeEdit") || this.hasAction(role, "fees", "view")
+          : this.hasAction(role, parent, "feeEdit"));
+      }
       // Platform operations must never be inferred from a store/project grant.
       if (feature === "payments" || (feature === "stores" && action === "create")) scope = "platform";
       return this.rolesAt(this.user, scope, target).some(r => this.hasAction(r, feature, action));
@@ -276,7 +369,9 @@
       if (input.id && !old) throw Error("角色不存在");
       const role = {id:old?.id || uid("role"), name:String(input.name || "").trim(), store:input.store || "", project:input.project || "", note:String(input.note || ""), enabled:input.enabled !== false, manager:old?.manager || false, permissionVersion:3,
         permissions:Object.fromEntries(Object.entries(actions).map(([f,aa]) => [f,aa.filter(a => a === "create" || a === "edit" ? input.permissions?.[f]?.some(x => x === "create" || x === "edit") : input.permissions?.[f]?.includes(a))]))};
+      upgradeFeePermissions(role);
       if (!role.name) throw Error("請填寫角色名稱");
+      if (!role.store) throw Error("一般角色必須指定個別商店；系統管理員由系統身分管理");
       if (role.store && !this.data.stores.some(s => s.id === role.store)) throw Error("適用商店不存在");
       if (role.project && !this.data.projects.some(p => p.id === role.project && p.store === role.store)) throw Error("適用專案不存在");
       if (this.data.roles.some(r => r.id !== role.id && r.store === role.store && (r.project || "") === role.project && r.name === role.name)) throw Error("此範圍已有相同角色名稱");
@@ -877,6 +972,7 @@
       }
 
       delete r.permissions.home;
+      if (Array.isArray(r.permissions.transactions)) r.permissions.transactions = r.permissions.transactions.filter(action => actions.transactions.includes(action));
       if ((r.permissionVersion || 0) < 2) {
         for (const [feature, valid] of Object.entries(actions)) {
           if (valid.includes("create") && r.permissions[feature]?.some(a => a === "create" || a === "edit")) {
@@ -889,16 +985,18 @@
         // These legacy fields were nonfunctional in v2. Do not activate latent access.
         delete r.permissions.payments;
         delete r.permissions.fees;
+        for (const feature of ["projects", "stores"]) if (Array.isArray(r.permissions[feature])) r.permissions[feature] = r.permissions[feature].filter(action => action !== "feeEdit");
         r.permissionVersion = 3;
       }
 
       if (r.id === "refund" && r.name === "退款展示角色")
         r.name = "交易退款角色";
+      upgradeFeePermissions(r);
     });
     data.projects.forEach((p) => {
       if (p.id === "C" && p.name === "示意專案 C") p.name = "線上課程專案 C";
     });
-    return data;
+    return isolateStoreRoles(data);
   }
   function installFeeDemo(data, now = new Date()) {
     const target = "fee-demo";

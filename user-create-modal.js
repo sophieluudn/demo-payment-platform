@@ -66,7 +66,6 @@
       </div>
 
       <div class="user-create-actions">
-        ${editing ? "" : '<button type="button" class="btn plain user-existing">加入既有帳號</button>'}
         <button type="button" class="btn plain user-create-cancel">取消</button>
         <button type="submit" class="btn primary user-create-save">確定</button>
       </div>
@@ -138,7 +137,7 @@
           config.stores.find((item) => item.id === grant.store)?.name;
 
     const getProjectLabel = (grant, groupSize) =>
-      grant.project === "__platform__" ? "全域授權" : grant.project === "__store__" ? "整店授權（含未來新增專案）" : grant.batchId
+      grant.project === "__platform__" ? "全域授權" : grant.project === "__store__" ? "全部專案" : grant.batchId
         ? `指定專案（目前 ${groupSize} 個）`
         : config.projectName?.(grant.project) ||
           config.projects.find((item) => item.id === grant.project)?.name;
@@ -200,9 +199,9 @@
 
       const removeButton = document.createElement("button");
       removeButton.type = "button";
-      removeButton.className = "user-grant-remove grant-revoke-label danger";
+      removeButton.className = "user-grant-remove danger";
       removeButton.title = "撤銷此授權，按確定後生效";
-      removeButton.textContent = "撤銷授權";
+      removeButton.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg>';
       removeButton.setAttribute("aria-label", "移除授權");
       removeButton.disabled = items.some((item) => item.locked); // 鎖定的授權不能移除
       removeButton.addEventListener("click", () => {
@@ -218,11 +217,6 @@
     const renderGrants = () => {
       grantList.replaceChildren();
       groupGrants().forEach((items) => grantList.append(createGrantRow(items)));
-      if (revoked.length) {
-        const note = document.createElement("p"); note.setAttribute("role","status");
-        note.textContent = `將撤銷 ${revoked.length} 項授權，按「確定」後生效；其他授權保持原樣。`;
-        grantList.append(note);
-      }
       updateButtonStates();
     };
 
@@ -311,7 +305,6 @@
     };
 
     const closeDialog = () => dialog.close();
-    dialog.querySelector(".user-existing")?.addEventListener("click",() => { closeDialog(); config.onExisting?.(); });
 
     const handleSubmit = (event) => {
       event.preventDefault();
@@ -399,8 +392,7 @@
     storeSelect.addEventListener("change", () => {
       fillSelect(projectSelect, "請選擇專案", [
         ...(storeSelect.value === "__platform__" ? [{id:"__platform__",name:"全域授權（含全部商店及專案）"}] : []),
-        ...(config.storeRoles?.(storeSelect.value).length ? [{id:"__store__",name:"整店授權（含未來新增專案）"}] : []),
-        { id: ALL, name: "指定目前全部專案（不含未來專案）" },
+        ...(config.storeRoles?.(storeSelect.value).length ? [{id:"__store__",name:"全部專案"}] : []),
         ...getCandidateProjects(),
       ]);
       fillSelect(roleSelect, "請選擇角色", getAvailableRoles());

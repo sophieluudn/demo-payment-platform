@@ -8,7 +8,7 @@ window.openRoleModal = (config) => {
 
   const isEditing = !!config.role?.id;
   const selection = structuredClone(config.role?.permissions || {});
-  const displayActions = Object.fromEntries(Object.entries(config.actions).map(([feature, actions]) => [
+  const displayActions = Object.fromEntries(Object.entries(config.actions).filter(([feature]) => feature !== "fees").map(([feature, actions]) => [
     feature, actions.filter(action => action !== "edit").map(action => action === "create" ? "createEdit" : action),
   ]));
   const underlyingActions = action => action === "createEdit" ? ["create", "edit"] : [action];
@@ -36,10 +36,6 @@ window.openRoleModal = (config) => {
           <select name="scope" aria-label="商店" required></select>
         </label>
         <label>
-          <span class="role-setting-label">角色適用範圍</span>
-          <select name="project" aria-label="角色適用範圍"></select>
-        </label>
-        <label>
           <span class="role-setting-label">角色名稱</span>
           <input name="name" placeholder="請輸入角色名稱" required>
         </label>
@@ -50,7 +46,7 @@ window.openRoleModal = (config) => {
         <div class="role-setting-row role-permissions-row">
           <span class="role-setting-label">功能權限</span>
           <div class="role-permission-grid">
-            <p class="role-permission-help">依側邊選單設定功能權限；灰色項目表示您無法授予此權限。商店及專案的資料範圍沿用使用者授權。</p>
+            <p class="role-permission-help">依選單設定功能權限</p>
             <table class="role-permission-table">
               <thead>
                 <tr><th>功能</th><th>操作權限</th></tr>
@@ -78,20 +74,13 @@ window.openRoleModal = (config) => {
   const errorAlert = dialog.querySelector(".role-error");
 
   // 填入商店選單
-  storeSelect.add(new Option("請明確選擇商店或平台共用範圍", ""));
-  config.stores.forEach((store) =>
-    storeSelect.add(new Option(store.name, store.id || "__platform__"))
+  storeSelect.add(new Option("請選擇商店", ""));
+  config.stores.filter(store => store.id).forEach((store) =>
+    storeSelect.add(new Option(store.name, store.id))
   );
-  storeSelect.value = isEditing
-    ? (config.role.store || "__platform__")
-    : (config.defaultStore ?? config.stores[0]?.id ?? "");
-  const projectSelect = form.elements.project;
-  const fillProjects = () => {
-    projectSelect.replaceChildren(new Option(storeSelect.value === "__platform__" ? "平台共用角色" : "商店共用角色", ""));
-    (config.projects || []).filter(p => p.store === storeSelect.value).forEach(p => projectSelect.add(new Option(`指定專案：${p.name}`,p.id)));
-    projectSelect.value = config.role?.project || "";
-  };
-  fillProjects();
+  storeSelect.value = config.defaultStore ?? "";
+  // Preserve a legacy project's restriction without presenting a scope editor.
+  const existingProject = config.role?.project || "";
 
   // 填入基本欄位
   form.elements.name.value = config.role?.name || "";
@@ -141,7 +130,7 @@ window.openRoleModal = (config) => {
       input.type = "checkbox";
       input.name = `${feature}:${action}`;
       input.checked = underlyingActions(action).some(value => selection[feature]?.includes(value));
-      input.disabled = !storeSelect.value || !underlyingActions(action).every(value => config.allowed(storeSelect.value === "__platform__" ? "" : storeSelect.value, feature, value, projectSelect.value));
+      input.disabled = !storeSelect.value || !underlyingActions(action).every(value => config.allowed(storeSelect.value, feature, value, config.role?.store === storeSelect.value ? existingProject : ""));
       input.dataset.permission = feature;
       input.setAttribute("aria-label", config.labels[feature] + config.labels[action]);
 
@@ -157,7 +146,7 @@ window.openRoleModal = (config) => {
 
       groupCheckbox.disabled = activeInputs.length === 0;
       groupCheckbox.checked = activeInputs.length > 0 && checkedCount === activeInputs.length;
-      groupCheckbox.indeterminate = checkedCount > 0 && checkedCount < activeInputs.length;
+      groupCheckbox.indeterminate = false;
     };
 
     // 事件連動監聽
@@ -177,13 +166,13 @@ window.openRoleModal = (config) => {
     if (feature === "stores") {
       const note = document.createElement("small");
       note.className = "role-permission-help";
-      note.textContent = "新增商店需平台權限；編輯需目標商店權限。費率另行授權。";
+      note.textContent = "新增商店限系統管理員；手續費率權限僅適用有授權的商店。";
       container.append(note);
     }
     if (feature === "projects") {
       const note = document.createElement("small");
       note.className = "role-permission-help";
-      note.textContent = "新增需整店專案管理權限；編輯限授權專案。費率另行授權。";
+      note.textContent = "新增需整店專案管理權限；編輯及手續費率限授權專案。";
       container.append(note);
     }
     return row;
@@ -198,8 +187,7 @@ window.openRoleModal = (config) => {
     });
   };
 
-  storeSelect.addEventListener("change", () => { fillProjects(); renderPermissionsTable(); });
-  projectSelect.addEventListener("change", renderPermissionsTable);
+  storeSelect.addEventListener("change", renderPermissionsTable);
   renderPermissionsTable();
 
   // ───────────────────────── 4. Modal 控制與事件監聽 ─────────────────────────
@@ -227,8 +215,8 @@ window.openRoleModal = (config) => {
       config.save({
         id: config.role?.id,
         name: form.elements.name.value,
-        store: storeSelect.value === "__platform__" ? "" : storeSelect.value,
-        project: projectSelect.value,
+        store: storeSelect.value,
+        project: existingProject,
         note: form.elements.note.value,
         enabled: enabledCheckbox.checked,
         permissions,

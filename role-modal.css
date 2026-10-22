@@ -71,6 +71,7 @@
 .role-permissions-row {
   align-items: start;
 }
+.role-permissions-row > .role-setting-label { padding-top: 0; line-height: 1.6; }
 
 .role-basics input,
 .role-basics select {
