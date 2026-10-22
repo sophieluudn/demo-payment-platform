@@ -8,10 +8,18 @@ window.openRoleModal = (config) => {
 
   const isEditing = !!config.role?.id;
   const selection = structuredClone(config.role?.permissions || {});
-  const displayActions = Object.fromEntries(Object.entries(config.actions).filter(([feature]) => feature !== "fees").map(([feature, actions]) => [
-    feature, actions.filter(action => action !== "edit").map(action => action === "create" ? "createEdit" : action),
-  ]));
-  const underlyingActions = action => action === "createEdit" ? ["create", "edit"] : [action];
+  const displayActions = Object.fromEntries(
+    Object.entries(config.actions)
+      .filter(([feature]) => feature !== "fees")
+      .map(([feature, actions]) => [
+        feature,
+        actions
+          .filter((action) => action !== "edit")
+          .map((action) => (action === "create" ? "createEdit" : action)),
+      ]),
+  );
+  const underlyingActions = (action) =>
+    action === "createEdit" ? ["create", "edit"] : [action];
 
   dialog.innerHTML = `
     <div class="role-modal-heading">
@@ -75,9 +83,9 @@ window.openRoleModal = (config) => {
 
   // 填入商店選單
   storeSelect.add(new Option("請選擇商店", ""));
-  config.stores.filter(store => store.id).forEach((store) =>
-    storeSelect.add(new Option(store.name, store.id))
-  );
+  config.stores
+    .filter((store) => store.id)
+    .forEach((store) => storeSelect.add(new Option(store.name, store.id)));
   storeSelect.value = config.defaultStore ?? "";
   // Preserve a legacy project's restriction without presenting a scope editor.
   const existingProject = config.role?.project || "";
@@ -119,7 +127,10 @@ window.openRoleModal = (config) => {
     const groupCheckbox = document.createElement("input");
     groupCheckbox.type = "checkbox";
     groupCheckbox.dataset.group = feature;
-    groupCheckbox.setAttribute("aria-label", `${config.labels[feature]}整組勾選`);
+    groupCheckbox.setAttribute(
+      "aria-label",
+      `${config.labels[feature]}整組勾選`,
+    );
     groupLabel.append(groupCheckbox, document.createTextNode("全選"));
     if (actions.length > 1) container.append(groupLabel);
 
@@ -129,10 +140,24 @@ window.openRoleModal = (config) => {
       const input = document.createElement("input");
       input.type = "checkbox";
       input.name = `${feature}:${action}`;
-      input.checked = underlyingActions(action).some(value => selection[feature]?.includes(value));
-      input.disabled = !storeSelect.value || !underlyingActions(action).every(value => config.allowed(storeSelect.value, feature, value, config.role?.store === storeSelect.value ? existingProject : ""));
+      input.checked = underlyingActions(action).some((value) =>
+        selection[feature]?.includes(value),
+      );
+      input.disabled =
+        !storeSelect.value ||
+        !underlyingActions(action).every((value) =>
+          config.allowed(
+            storeSelect.value,
+            feature,
+            value,
+            config.role?.store === storeSelect.value ? existingProject : "",
+          ),
+        );
       input.dataset.permission = feature;
-      input.setAttribute("aria-label", config.labels[feature] + config.labels[action]);
+      input.setAttribute(
+        "aria-label",
+        config.labels[feature] + config.labels[action],
+      );
 
       label.append(input, document.createTextNode(config.labels[action]));
       container.append(label);
@@ -145,13 +170,19 @@ window.openRoleModal = (config) => {
       const checkedCount = activeInputs.filter((input) => input.checked).length;
 
       groupCheckbox.disabled = activeInputs.length === 0;
-      groupCheckbox.checked = activeInputs.length > 0 && checkedCount === activeInputs.length;
+      groupCheckbox.checked =
+        activeInputs.length > 0 && checkedCount === activeInputs.length;
       groupCheckbox.indeterminate = false;
     };
 
     // 事件連動監聽
     const remember = () => {
-      selection[feature] = actions.filter((action, index) => actionInputs[index].checked && !actionInputs[index].disabled).flatMap(underlyingActions);
+      selection[feature] = actions
+        .filter(
+          (action, index) =>
+            actionInputs[index].checked && !actionInputs[index].disabled,
+        )
+        .flatMap(underlyingActions);
       syncGroupState();
     };
     actionInputs.forEach((input) => input.addEventListener("change", remember));
@@ -163,18 +194,6 @@ window.openRoleModal = (config) => {
     });
 
     syncGroupState();
-    if (feature === "stores") {
-      const note = document.createElement("small");
-      note.className = "role-permission-help";
-      note.textContent = "新增商店限系統管理員；手續費率權限僅適用有授權的商店。";
-      container.append(note);
-    }
-    if (feature === "projects") {
-      const note = document.createElement("small");
-      note.className = "role-permission-help";
-      note.textContent = "新增需整店專案管理權限；編輯及手續費率限授權專案。";
-      container.append(note);
-    }
     return row;
   };
 
@@ -196,7 +215,7 @@ window.openRoleModal = (config) => {
   dialog.querySelector(".role-close").addEventListener("click", closeModal);
   dialog.querySelector(".role-cancel").addEventListener("click", closeModal);
   dialog.addEventListener("close", () =>
-    document.body.classList.remove("role-modal-open")
+    document.body.classList.remove("role-modal-open"),
   );
 
   // 表單送出處理
@@ -206,9 +225,13 @@ window.openRoleModal = (config) => {
     // 收集所有選擇的權限
     const permissions = {};
     Object.entries(displayActions).forEach(([feature, actions]) => {
-      permissions[feature] = actions.filter(
-        (action) => form.elements[`${feature}:${action}`]?.checked && !form.elements[`${feature}:${action}`]?.disabled
-      ).flatMap(underlyingActions);
+      permissions[feature] = actions
+        .filter(
+          (action) =>
+            form.elements[`${feature}:${action}`]?.checked &&
+            !form.elements[`${feature}:${action}`]?.disabled,
+        )
+        .flatMap(underlyingActions);
     });
 
     try {
