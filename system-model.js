@@ -460,6 +460,21 @@
       if ((!input.id || !input.metadataOnly) && !this.canPlatform("fees","edit")) throw Error("設定預設費率需平台費率管理權限");
       const old = this.data.paymentTools.find((t) => t.id === input.id);
       if (input.id && !old) throw Error("支付工具不存在");
+      if (!input.id && (!input.effectiveAt || feeInstant(input.effectiveAt) <= Date.now()))
+        throw Error("請選擇晚於現在的手續費開始時間");
+      const sourceVersion = old && (input.sourceVersionId || input.versionId
+        ? this.feeVersions("global", old.id).find(v => v.id === (input.sourceVersionId || input.versionId))
+        : this.activeFeeVersion("global", old.id));
+      if (old && (input.sourceVersionId || input.versionId) && (!sourceVersion || sourceVersion.cancelledAt))
+        throw Error("手續費版本已變更，請重新開啟編輯視窗");
+      const started = sourceVersion && feeInstant(sourceVersion.effectiveAt) < new Date();
+      if (started && (
+        input.unit !== old.unit ||
+        String(input.currency || "").trim() !== old.currency ||
+        Number(input.fee) !== Number(sourceVersion.entries[old.id]?.fee) ||
+        (input.sourceVersionId && !input.effectiveAt) ||
+        (input.effectiveAt !== undefined && feeInstant(input.effectiveAt) !== feeInstant(sourceVersion.effectiveAt))
+      )) throw Error("手續費開始時間早於現在，不可變更手續費率、計價單位、幣別及開始時間；請新增相同支付工具的費率");
       if (old && old.unit !== input.unit && !this.canPlatform("fees","edit"))
         throw Error("變更計價單位需平台費率管理權限");
       const values = Object.fromEntries(
@@ -485,20 +500,23 @@
         ...values,
         unit: input.unit,
       };
-      if (
-        this.data.paymentTools.some(
+      const duplicate = this.data.paymentTools.find(
           (t) =>
             t.id !== tool.id &&
             t.platform === tool.platform &&
             t.name === tool.name,
-        )
-      )
-        throw Error("此平台已有相同支付工具名稱");
+        );
+      if (duplicate) {
+        if (old || duplicate.code !== tool.code || duplicate.currency !== tool.currency || duplicate.unit !== tool.unit)
+          throw Error("相同支付工具的付款方式代碼、幣別及計價單位須一致");
+        this.saveFeeVersion("global", duplicate.id, {effectiveAt:input.effectiveAt,entries:{[duplicate.id]:{mode:"custom",fee:input.fee}}});
+        return duplicate;
+      }
       if (old) {
         const previousUnit = old.unit;
         try {
           old.unit = tool.unit;
-          if (!input.metadataOnly) this.saveFeeVersion("global", old.id, {
+          if (!input.metadataOnly && !started) this.saveFeeVersion("global", old.id, {
             id: input.versionId,
             effectiveAt: input.effectiveAt,
             entries: { [old.id]: { mode: "custom", fee: input.fee } },
@@ -508,13 +526,14 @@
         }
         Object.assign(old, tool);
       } else {
+        const effectiveAt = feeInstant(input.effectiveAt);
         this.data.paymentTools.push(tool);
         this.data.fees[tool.id] = String(input.fee).trim();
         this.data.feeVersions.push({
           id: uid("fee"),
           scope: "global",
           target: tool.id,
-          effectiveAt: new Date().toISOString(),
+          effectiveAt: new Date(effectiveAt).toISOString(),
           createdAt: new Date().toISOString(),
           createdBy: this.user.name,
           entries: {

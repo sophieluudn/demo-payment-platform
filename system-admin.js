@@ -957,9 +957,7 @@
       .filter((x, i, a) => a.indexOf(x) === i)
       .map((x) => [x, x]);
 
-    const effectiveField = key
-      ? `<label><span>手續費開始時間 (GMT+8)</span><div><input name="effectiveAt" aria-label="手續費開始時間 (GMT+8)" type="datetime-local" step="1" value="${pending ? feeDate(version.effectiveAt).replace(" ", "T") : ""}"><small>留空立即生效；填入未來時間可排程生效。</small></div></label>`
-      : "";
+    const effectiveField = `<label><span><em>*</em> 手續費開始時間 (GMT+8)</span><div><input name="effectiveAt" aria-label="手續費開始時間 (GMT+8)" type="datetime-local" step="1" ${!key ? "required" : ""} value="${version ? feeDate(version.effectiveAt).replace(" ", "T") : ""}">${!key ? "" : `<small>${pending ? "留空立即生效；填入未來時間可排程生效。" : "此費率已開始使用，不可變更手續費率、計價單位、幣別及開始時間；請新增相同支付工具的費率。"}</small>`}</div></label>`;
 
     const fields = [
       fieldLabel(
@@ -985,12 +983,12 @@
         "幣別",
         `<select name="currency" required>${options(currencyItems, tool.currency)}</select>`,
       ),
-      `<label><span>備註</span><input name="note" value="${esc(tool.note || "")}"></label>`,
       effectiveField,
+      `<label><span>備註</span><input name="note" value="${esc(tool.note || "")}"></label>`,
     ].join("\n      ");
 
     return `<div class="sys-modal-header"><h2 id="sys-payment-title">${key ? "編輯支付工具" : "新增支付工具"}</h2><button type="button" class="sys-modal-close" data-action="close-payment" aria-label="關閉"><img src="assets/x.svg" alt=""></button></div>
-    <form id="sys-payment-form" data-key="${esc(key || "")}" data-version="${pending ? esc(version.id) : ""}">
+    <form id="sys-payment-form" data-key="${esc(key || "")}" data-source-time="${esc(version?.effectiveAt || "")}" data-source-version="${esc(version?.id || "")}" data-version="${pending ? esc(version.id) : ""}">
       <div class="sys-payment-fields">
       ${fields}
       </div>
@@ -1030,6 +1028,10 @@
     }
     if (key && !app.canPlatform("payments","edit")) {
       for (const name of ["platform","name","code","currency","note"]) dialog.querySelector("form").elements[name].disabled = true;
+    }
+    if (version && new Date(version.effectiveAt) < new Date()) {
+      for (const name of ["rate", "unit", "currency", "effectiveAt"])
+        dialog.querySelector("form").elements[name].disabled = true;
     }
     dialog.showModal();
   }
@@ -1763,11 +1765,13 @@
           platform: data.get("platform"),
           name: data.get("name"),
           code: data.get("code"),
-          fee: form.dataset.metadataOnly === "true" ? app.resolveFee(key).fee : data.get("rate"),
-          unit: data.get("unit"),
-          effectiveAt: data.get("effectiveAt") || undefined,
+          fee: form.elements.rate.value,
+          unit: form.elements.unit.value,
+          effectiveAt: form.dataset.sourceTime && form.elements.effectiveAt.value === form.elements.effectiveAt.defaultValue
+            ? form.dataset.sourceTime : form.elements.effectiveAt.value || undefined,
           versionId: form.dataset.version || undefined,
-          currency: data.get("currency"),
+          sourceVersionId: form.dataset.sourceVersion || undefined,
+          currency: form.elements.currency.value,
           note: data.get("note"),
         }),
       );

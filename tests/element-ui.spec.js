@@ -3,23 +3,50 @@ const STORAGE = "payment-system-management-v2";
 const app = (page) => page.locator("#element-app");
 const field = (page, id) => page.locator(`[data-source-id="${id}"]`);
 
-test("payment rate saves immediately without a scheduled date", async ({page}) => {
+test("started payment fields are disabled and metadata still saves", async ({page}) => {
   await page.goto("/payments.html");
-  await app(page).getByRole("link",{name:"編輯 國內信用卡一次付清",exact:true}).first().click();
-  const dialog = page.getByRole("dialog",{name:"編輯支付工具",exact:true});
-  await expect(dialog.locator(".el-date-editor input")).toHaveValue("");
-  await dialog.getByRole("spinbutton").fill("3.51");
-  await dialog.getByRole("button",{name:"確定",exact:true}).click();
+  await app(page).getByRole("link").filter({hasText:"\u570b\u5167\u4fe1\u7528\u5361\u4e00\u6b21\u4ed8\u6e05"}).first().click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("spinbutton")).toBeDisabled();
+  await expect(dialog.locator('[data-field-name="unit"] input')).toBeDisabled();
+  await expect(dialog.locator('[data-field-name="currency"] input')).toBeDisabled();
+  await expect(dialog.locator('.el-date-editor input')).toBeDisabled();
+  await dialog.getByRole("button",{name:"\u78ba\u5b9a",exact:true}).click();
   await expect(dialog).toBeHidden();
-  const updated = app(page).getByRole("row").filter({hasText:"國內信用卡一次付清"}).filter({hasText:"3.51%"});
-  await expect(updated).toHaveCount(1);
-  await expect(updated).toContainText("啟用");
+});
+
+async function pendingPayment(page) {
+  await page.goto("/payments.html");
+  await page.evaluate(key => {
+    const state = JSON.parse(localStorage.getItem(key));
+    const model = new window.SystemManagement.SystemManagement(state.data);
+    model.saveFeeVersion("global", "credit-card", {effectiveAt:"2099-11-01T00:00:00+08:00", entries:{"credit-card":{mode:"custom",fee:"2.8"}}});
+    state.data = model.data;
+    localStorage.setItem(key,JSON.stringify(state));
+  }, STORAGE);
   await page.reload();
-  await expect(updated).toHaveCount(1);
+}
+
+test("adding the same tool schedules a new rate without altering the started version", async ({page}) => {
+  await page.goto('/payments.html');
+  await app(page).getByRole('button',{name:'新增',exact:true}).click();
+  const dialog = page.getByRole('dialog',{name:'新增支付工具',exact:true});
+  await choose(page,dialog.locator('.el-select').filter({has:page.getByRole('combobox',{name:'第三方金流平台',exact:true})}),'藍新金流');
+  await dialog.getByRole('textbox',{name:'* 支付工具名稱',exact:true}).fill('國內信用卡一次付清');
+  await dialog.getByRole('textbox',{name:'付款方式代碼',exact:true}).fill('CREDIT');
+  await dialog.getByRole('spinbutton').fill('3.5');
+  const date = dialog.locator('.el-date-editor input');
+  await date.fill('2099-11-01 00:00:00');
+  await date.press('Tab');
+  await dialog.getByRole('button',{name:'確定',exact:true}).click();
+  await expect(dialog).toBeHidden();
+  await expect(app(page).getByRole('row').filter({hasText:'國內信用卡一次付清'})).toHaveCount(2);
+  await page.reload();
+  await expect(app(page).getByRole('row').filter({hasText:'國內信用卡一次付清'})).toHaveCount(2);
 });
 
 test("edited payment unit can be changed and persists", async ({page}) => {
-  await page.goto("/payments.html");
+  await pendingPayment(page);
   await app(page).getByRole("link").filter({hasText:"國內信用卡一次付清"}).first().click();
   const dialog = page.getByRole("dialog", {name:"編輯支付工具",exact:true});
   const unit = dialog.locator('[data-field-name="unit"] .el-select');
@@ -404,7 +431,7 @@ test("entered store and authorization remain enforced for other roles", async ({
 test("payments edit, persist, clear search, cancel and Escape", async ({
   page,
 }) => {
-  await page.goto("/payments.html");
+  await pendingPayment(page);
   const row = app(page)
     .locator(".el-table__body tr")
     .filter({ hasText: "國內信用卡一次付清" })
@@ -511,7 +538,7 @@ test("payment platform dropdown filters together with keywords and resets to all
 test("payment fee versions retain history when revised through the edit modal", async ({
   page,
 }) => {
-  await page.goto("/payments.html");
+  await pendingPayment(page);
   const row = app(page)
     .locator(".el-table__body tr")
     .filter({ hasText: "國內信用卡一次付清" })
@@ -605,8 +632,19 @@ test("new payment tools appear in inherited store and project batches", async ({
     .getByRole("textbox", { name: "付款方式代碼", exact: true })
     .fill("JKOPAY");
   await dialog.getByRole("spinbutton").fill("2.2");
+  await expect(dialog.getByText('留空立即生效；填入未來時間可排程生效。',{exact:true})).toHaveCount(0);
+  await dialog.getByRole("button", { name: "確定", exact: true }).click();
+  await expect(dialog).toBeVisible();
+  const startDate = dialog.locator('.el-date-editor input');
+  await startDate.fill('2000-01-01 00:00:00');
+  await startDate.press('Tab');
+  await dialog.getByRole("button", { name: "確定", exact: true }).click();
+  await expect(dialog).toContainText('請選擇晚於現在的手續費開始時間');
+  await startDate.fill('2099-11-01 00:00:00');
+  await startDate.press('Tab');
   await dialog.getByRole("button", { name: "確定", exact: true }).click();
   await expect(dialog).toBeHidden();
+  await page.clock.setFixedTime(new Date('2099-11-02T00:00:00+08:00'));
   for (const [route, name, upper] of [
     ["stores", "教育事業部", "全站"],
     ["projects", "線上商城專案 A", "商店"],
@@ -822,6 +860,9 @@ test("expanded role modal preserves selections across stores and edit, and enfor
   await expect(dialog.locator('.el-select').first()).toContainText('教育事業部');
   await expect(dialog.getByRole('combobox', {name:'角色適用範圍',exact:true})).toHaveCount(0);
   await expect(dialog.getByText('依選單設定功能權限', {exact:true})).toBeVisible();
+  for (const feature of ['專案管理', '商店管理'])
+    await expect(dialog.locator(`.el-checkbox[aria-label="${feature}新增 / 編輯手續費率"]`)).toBeVisible();
+  await expect(dialog.getByRole('checkbox', {name:/^手續費率設定/})).toHaveCount(0);
   await expect(dialog.getByRole('checkbox', {name:'所有交易紀錄匯出',exact:true})).toHaveCount(0);
   await dialog.locator('.el-select').first().click();
   await expect(page.getByRole('option').filter({hasText:'平台共用'})).toHaveCount(0);

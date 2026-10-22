@@ -14,6 +14,51 @@ const now = new Date("2026-10-15T12:00:00+08:00");
 const start = "2026-11-01T00:00";
 const before = "2026-10-31T23:59:59+08:00";
 const after = "2026-11-01T00:00:00+08:00";
+test("started payment versions lock rate unit and start time without partial writes", () => {
+  const app = new SystemManagement(migrate(seed()));
+  const tool = app.data.paymentTools.find(t => t.id === "credit-card");
+  const version = app.activeFeeVersion("global", tool.id);
+  version.effectiveAt = "2000-01-01T00:00:00Z";
+  const input = {...tool, fee:version.entries[tool.id].fee, sourceVersionId:version.id,effectiveAt:version.effectiveAt};
+  for (const change of [{fee:"99"}, {unit:"元"}, {currency:"USD"}, {effectiveAt:"2099-01-01T00:00"}, {fee:"99",effectiveAt:"2099-01-01T00:00"}]) {
+    const before = JSON.stringify(app.data);
+    assert.throws(() => app.savePaymentTool({...input,...change}), /不可變更/);
+    assert.equal(JSON.stringify(app.data), before);
+  }
+  const count = app.data.feeVersions.length;
+  app.savePaymentTool({...input,note:"保留費率，只改備註"});
+  assert.equal(tool.note, "保留費率，只改備註");
+  assert.equal(app.data.feeVersions.length, count);
+  assert.throws(() => app.savePaymentTool({...input,metadataOnly:true,effectiveAt:"2099-01-01T00:00"}), /不可變更/);
+});
+
+test("adding the same payment tool creates a fee version and preserves history", () => {
+  const app = new SystemManagement(migrate(seed()));
+  const tool = app.data.paymentTools.find(t => t.id === "credit-card");
+  const history = structuredClone(app.data.feeVersions);
+  const count = app.data.paymentTools.length;
+  const {id,...values} = tool;
+  for (const effectiveAt of [undefined,"","2000-01-01T00:00:00Z"]) {
+    const before = JSON.stringify(app.data);
+    assert.throws(() => app.savePaymentTool({...values,fee:"3.5",effectiveAt}), /晚於現在/);
+    assert.throws(() => app.savePaymentTool({...values,name:"新支付工具",fee:"3.5",effectiveAt}), /晚於現在/);
+    assert.equal(JSON.stringify(app.data),before);
+  }
+  const result = app.savePaymentTool({...values,fee:"3.5",effectiveAt:"2099-11-01T00:00:00+08:00"});
+  assert.equal(result.id,id);
+  assert.equal(app.data.paymentTools.length,count);
+  assert.deepEqual(app.data.feeVersions.slice(0,-1),history);
+  assert.equal(app.data.feeVersions.at(-1).entries[id].fee,"3.5");
+  assert.equal(app.data.feeVersions.at(-1).effectiveAt,"2099-10-31T16:00:00.000Z");
+});
+
+test("a scheduled payment that starts while editing is locked on submission", () => {
+  const app = new SystemManagement(migrate(seed()));
+  const tool = app.data.paymentTools.find(t => t.id === "credit-card");
+  const version = app.saveFeeVersion("global",tool.id,{effectiveAt:"2099-01-01T00:00",entries:{[tool.id]:{mode:"custom",fee:"2.8"}}});
+  app.data.feeVersions.find(v => v.id === version.id).effectiveAt = "2000-01-01T00:00:00Z";
+  assert.throws(() => app.savePaymentTool({...tool,versionId:version.id,fee:"3",effectiveAt:"2099-01-01T00:00"}), /不可變更/);
+});
 function entries(app, custom = {}) {
   return Object.fromEntries(
     app.data.paymentTools.map((t) => [
@@ -180,6 +225,7 @@ test("tools added after a batch was scheduled inherit through both levels", () =
   const tool = app.savePaymentTool({
     platform: "街口",
     name: "街口支付",
+    effectiveAt: "2099-01-01T00:00",
     code: "JKOPAY",
     fee: "2.2",
     unit: "%",
@@ -187,7 +233,7 @@ test("tools added after a batch was scheduled inherit through both levels", () =
   });
   assert.equal(
     app.paymentSettingsForProject("A").find((t) => t.id === tool.id).fee,
-    "2.2",
+    null,
   );
   assert.equal(
     app.resolveFee(tool.id, { projectId: "A", at: "2099-02-01T00:00" }).fee,
@@ -346,14 +392,16 @@ test("tool metadata edits preserve fee history and charging units can be changed
   });
   assert.equal(app.data.feeVersions.length, count);
   assert.equal(app.resolveFee(tool.id, { at: after }).fee, "2.8");
+  const pending = app.saveFeeVersion("global", tool.id, {effectiveAt:"2099-11-01T00:00:00+08:00",entries:{[tool.id]:{mode:"custom",fee:"2.8"}}});
   app.savePaymentTool({
         ...tool,
+        versionId:pending.id,
         unit: "元",
         fee: "150",
         effectiveAt: "2099-11-01T00:00:00+08:00",
       });
   assert.equal(tool.unit, "元");
-  assert.equal(app.data.feeVersions.length, count + 1);
+  assert.equal(app.data.feeVersions.length, count + 2);
 });
 
 test("store versions retain enabled tools independently across complete batches", () => {
