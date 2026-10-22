@@ -1,117 +1,172 @@
+/* ==========================================================
+   報表搜尋區（Report Search Grid）
+   目錄：
+   1. 容器查詢基準（Container Query）
+   2. 搜尋表單版型與欄位
+   3. 欄位跨欄與輸出格式選項
+   4. 操作按鈕區
+   5. 響應式（依 main 寬度）
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ※ .statistics-filter 開頭的選擇器僅套用於統計篩選表單，
+     .report-format-field 則用於含「輸出格式」的欄位。
+   ========================================================== */
+
+/* ==========================================================
+   1. 容器查詢基準（Container Query）
+   ========================================================== */
+
+/* 頁面含報表搜尋表單時，將 <main> 設為查詢容器
+   ※ 下方 @container 規則依「main 的寬度」判斷，而非瀏覽器視窗寬度
+     （側邊選單收合或展開都會影響 main 寬度，進而改變版面） */
 body:has(.report-search-grid) main {
-    container-type: inline-size
+  container-type: inline-size;
 }
+
+/* ==========================================================
+   2. 搜尋表單版型與欄位
+   ========================================================== */
+
+/* ── 2-1. 表單容器：預設 4 欄網格 ── */
 
 .filter.report-search-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px 16px;
-    align-items: end;
-    padding: 15px
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px 16px;
+  align-items: end;
+  padding: 15px;
 }
 
-.report-search-grid>.field {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    min-width: 0
+/* ── 2-2. 單一欄位：標題在上、輸入元件在下 ── */
+
+/* 欄位容器：垂直排列 */
+.report-search-grid > .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
 }
 
-.report-search-grid>.field>span,
-.statistics-filter.report-search-grid .field>span {
-    width: auto;
-    font-weight: 600;
-    white-space: nowrap
+/* 欄位標題：粗體、不換行（統計篩選的欄位標題也套用同樣設定） */
+.report-search-grid > .field > span,
+.statistics-filter.report-search-grid .field > span {
+  width: auto;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.report-search-grid>.field>input,
-.report-search-grid>.field>select {
-    width: 100% !important;
-    min-width: 0;
-    box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px
+/* 輸入框與下拉選單：滿寬、固定高度 40px（!important 用來蓋過其他寬度設定） */
+.report-search-grid > .field > input,
+.report-search-grid > .field > select {
+  width: 100% !important;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
 }
 
-.statistics-filter.report-search-grid>.field:first-child,
-.report-search-grid>.report-format-field {
-    grid-column: span 2
+/* ==========================================================
+   3. 欄位跨欄與輸出格式選項
+   ========================================================== */
+
+/* 橫跨 2 欄：統計篩選的第一個欄位、輸出格式欄位 */
+.statistics-filter.report-search-grid > .field:first-child,
+.report-search-grid > .report-format-field {
+  grid-column: span 2;
 }
 
+/* 輸出格式選項群組：橫向排列，空間不足時換行 */
 .report-format-options {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 16px;
-    min-height: 40px
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  min-height: 40px;
 }
 
+/* 單一選項（單選按鈕 + 文字）：取消外距、不換行 */
 .report-format-options .radio {
-    margin: 0;
-    white-space: nowrap
+  margin: 0;
+  white-space: nowrap;
 }
 
-.statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
-    grid-column: span 2
+/* 橫跨 2 欄：統計篩選的最後一個欄位（同類型元素中的最後一個） */
+.statistics-filter.report-search-grid > .field:nth-last-of-type(1) {
+  grid-column: span 2;
 }
 
+/* ==========================================================
+   4. 操作按鈕區
+   ========================================================== */
+
+/* 按鈕區容器：靠右排列，位於網格第 4 欄 */
 .report-search-actions {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    grid-column: 4
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  grid-column: 4;
 }
 
-.report-search-grid .report-search-actions>.btn {
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    box-sizing: border-box;
-    padding-top: 0;
-    padding-bottom: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0
+/* 按鈕：固定高度 40px，文字垂直置中，外距歸零 */
+.report-search-grid .report-search-actions > .btn {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  box-sizing: border-box;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
 }
 
-@container(max-width:940px) {
-    .filter.report-search-grid {
-        grid-template-columns: repeat(2, minmax(0, 1fr))
-    }
+/* ==========================================================
+   5. 響應式（依 main 寬度）
+   ========================================================== */
 
-    .report-search-actions {
-        grid-column: 2
-    }
+/* ── main 寬度 ≤ 940px：改為 2 欄，按鈕區移到第 2 欄 ── */
+@container (max-width: 940px) {
+  .filter.report-search-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 
-    .statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
-        grid-column: span 2
-    }
+  .report-search-actions {
+    grid-column: 2;
+  }
+
+  /* 統計篩選的最後一個欄位：橫跨 2 欄（即整列滿寬，與第 3 節的設定相同） */
+  .statistics-filter.report-search-grid > .field:nth-last-of-type(1) {
+    grid-column: span 2;
+  }
 }
 
-@container(max-width:480px) {
-    .filter.report-search-grid {
-        grid-template-columns: minmax(0, 1fr)
-    }
+/* ── main 寬度 ≤ 480px：改為單欄 ── */
+@container (max-width: 480px) {
+  .filter.report-search-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 
-    .statistics-filter.report-search-grid>.field:first-child,
-    .report-search-grid>.report-format-field,
-    .statistics-filter.report-search-grid>.field:nth-last-of-type(1) {
-        grid-column: 1
-    }
+  /* 原本橫跨 2 欄的欄位：改為佔滿 1 欄 */
+  .statistics-filter.report-search-grid > .field:first-child,
+  .report-search-grid > .report-format-field,
+  .statistics-filter.report-search-grid > .field:nth-last-of-type(1) {
+    grid-column: 1;
+  }
 
-    .report-search-actions {
-        grid-column: 1
-    }
+  .report-search-actions {
+    grid-column: 1;
+  }
 
-    .report-search-grid>.field {
-        width: auto
-    }
+  .report-search-grid > .field {
+    width: auto;
+  }
 
-    .report-search-grid>.field>select {
-        width: 100% !important
-    }
+  /* 下拉選單：維持滿寬 */
+  .report-search-grid > .field > select {
+    width: 100% !important;
+  }
 }

@@ -1,3 +1,18 @@
+/* ==========================================================
+   發票彈窗（Invoice Modal）
+   目錄：
+   1. 彈窗本體
+   2. 標題列與關閉按鈕
+   3. 發票表格
+   4. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
+
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>） */
 .invoice-modal {
   width: 80vw;
   max-width: 1600px;
@@ -12,14 +27,22 @@
   overflow: auto;
 }
 
+/* 彈窗背景遮罩 */
 .invoice-modal::backdrop {
   background: rgb(0 0 0 / 50%);
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .invoice-modal-open {
   overflow: hidden;
 }
 
+
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（需覆蓋全站 header 樣式，因此加上 .invoice-modal 提高權重） */
 .invoice-modal .invoice-modal-header {
   position: relative;
   height: 79px;
@@ -31,6 +54,7 @@
   gap: 0;
 }
 
+/* 標題文字 */
 .invoice-modal h2 {
   font-size: 18px;
   font-weight: 400;
@@ -38,6 +62,7 @@
   margin: 0;
 }
 
+/* 關閉按鈕（定位於標題列右上角） */
 .invoice-close {
   position: absolute;
   right: -5px;
@@ -53,10 +78,17 @@
   border-radius: 3px;
 }
 
+/* 關閉按鈕：滑鼠移入 */
 .invoice-close:hover {
   color: #409eff;
 }
 
+
+/* ==========================================================
+   3. 發票表格
+   ========================================================== */
+
+/* 表格容器（覆蓋全站 table 樣式，因此加上 .invoice-modal 提高權重） */
 .invoice-modal .invoice-table {
   width: 100%;
   min-width: 0;
@@ -65,6 +97,7 @@
   font-size: 14px;
 }
 
+/* 儲存格共用樣式（表頭與內容） */
 .invoice-table th,
 .invoice-table td {
   border: 1px solid #c9c9c9;
@@ -76,16 +109,24 @@
   overflow-wrap: anywhere;
 }
 
+/* 表頭儲存格 */
 .invoice-table th {
   background: #efefef;
   color: #000;
 }
 
+/* 連續的表格：上移 1px，避免相鄰邊框重疊成雙線 */
 .invoice-modal .invoice-table + .invoice-table {
   margin-top: -1px;
 }
 
-@media (width <=700px) {
+
+/* ==========================================================
+   4. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
+
+@media (width <= 700px) {
+  /* 彈窗本體：改為幾乎滿版 */
   .invoice-modal {
     width: calc(100vw - 24px);
     max-height: calc(100dvh - 32px);
@@ -93,18 +134,22 @@
     padding: 0 12px 16px;
   }
 
+  /* 標題列：縮減高度 */
   .invoice-modal .invoice-modal-header {
     height: 65px;
   }
 
+  /* 內容區：允許捲動 */
   .invoice-modal-content {
     overflow: auto;
   }
 
+  /* 表格：維持最小寬度，空間不足時於內容區橫向捲動 */
   .invoice-modal .invoice-table {
     min-width: 700px;
   }
 
+  /* 關閉按鈕：貼齊右側 */
   .invoice-close {
     right: 0;
   }

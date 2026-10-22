@@ -1,14 +1,29 @@
 <!doctype html>
 <html lang="zh-Hant">
+  <!-- ==================================================
+       HEAD：頁面設定、樣式與腳本
+       ================================================== -->
   <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
     <title>選擇商店｜行動支付支援平台</title>
-    <link rel="stylesheet" href="ui/dist/access-app.css">
+
+    <!-- 樣式：登入與選擇商店頁共用的元件樣式 -->
+    <link rel="stylesheet" href="ui/dist/access-app.css" />
+
+    <!-- 腳本（defer：待 HTML 解析完成後，依下列順序執行）
+         1. system-model.js：系統資料模型
+         2. access-app.js：頁面元件（掛載至 #access-app），預期會用到上一支腳本，請勿調換順序 -->
     <script defer src="system-model.js"></script>
     <script defer src="ui/dist/access-app.js"></script>
   </head>
+
+  <!-- ==================================================
+       BODY：選擇商店頁
+       ================================================== -->
   <body class="access-page">
+    <!-- 頁面元件掛載點（由 access-app.js 渲染內容） -->
     <div id="access-app"></div>
   </body>
 </html>

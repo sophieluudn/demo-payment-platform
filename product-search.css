@@ -1,115 +1,177 @@
+/* ==========================================================
+   商品搜尋區（Product Search）
+   目錄：
+   1. 容器查詢基準（Container Query）
+   2. 搜尋表單版型與欄位
+   3. 操作按鈕區
+   4. 響應式（依 main 寬度）
+   5. 標籤欄位
+   6. 表單控制項統一高度（高權重覆寫）
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ========================================================== */
+
+/* ==========================================================
+   1. 容器查詢基準（Container Query）
+   ========================================================== */
+
+/* 頁面含搜尋表單時，將 <main> 設為查詢容器
+   ※ 下方 @container 規則依「main 的寬度」判斷，而非瀏覽器視窗寬度
+     （側邊選單收合或展開都會影響 main 寬度，進而改變版面） */
 body:has(.product-search) main {
-    container-type: inline-size
+  container-type: inline-size;
 }
+
+/* ==========================================================
+   2. 搜尋表單版型與欄位
+   ========================================================== */
+
+/* ── 2-1. 表單容器：預設 4 欄網格 ── */
 
 .product-search {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 20px 16px;
-    align-items: end;
-    padding: 15px
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px 16px;
+  align-items: end;
+  padding: 15px;
 }
 
-.product-search>.field {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-    min-width: 0
+/* ── 2-2. 單一欄位：標題在上、輸入元件在下 ── */
+
+/* 欄位容器：垂直排列 */
+.product-search > .field {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
 }
 
-.product-search>.field>span {
-    width: 100%;
-    font-weight: 600
+/* 欄位標題：粗體、滿寬 */
+.product-search > .field > span {
+  width: 100%;
+  font-weight: 600;
 }
 
-.product-search>.field>select,
-.product-search>.field>input {
-    width: 100% !important;
-    min-width: 0
+/* 下拉選單與輸入框：滿寬（!important 用來蓋過其他寬度設定） */
+.product-search > .field > select,
+.product-search > .field > input {
+  width: 100% !important;
+  min-width: 0;
 }
 
-.product-search>.field:nth-child(2) {
-    grid-column: span 2;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr))
+/* ── 2-3. 第 2 個欄位：橫跨 2 欄，內部再分為 2 欄 ── */
+
+.product-search > .field:nth-child(2) {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-.product-search>.field:nth-child(2)>span {
-    grid-column: span 2
+/* 第 2 個欄位的標題：橫跨內部 2 欄 */
+.product-search > .field:nth-child(2) > span {
+  grid-column: span 2;
 }
 
+/* ==========================================================
+   3. 操作按鈕區
+   ========================================================== */
+
+/* 按鈕區容器：靠右排列，位於網格第 4 欄 */
 .product-search-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  grid-column: 4;
+}
+
+/* 按鈕：固定高度 40px，文字垂直置中 */
+.product-search .product-search-actions > .btn {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  box-sizing: border-box;
+  padding-top: 0;
+  padding-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================
+   4. 響應式（依 main 寬度）
+   ========================================================== */
+
+/* ── main 寬度 ≤ 940px：改為 2 欄，按鈕區移到第 2 欄 ── */
+@container (max-width: 940px) {
+  .product-search {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-search-actions {
+    grid-column: 2;
+  }
+}
+
+/* ── main 寬度 ≤ 480px：改為單欄 ── */
+@container (max-width: 480px) {
+  .product-search {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* 第 2 個欄位：取消橫跨與內部網格，改為一般垂直排列 */
+  .product-search > .field:nth-child(2) {
+    grid-column: 1;
     display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 12px;
-    grid-column: 4
+  }
+
+  .product-search-actions {
+    grid-column: 1;
+  }
 }
 
-.product-search .product-search-actions>.btn {
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    box-sizing: border-box;
-    padding-top: 0;
-    padding-bottom: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center
+/* ==========================================================
+   5. 標籤欄位
+   ========================================================== */
+
+/* 標籤欄位：橫跨 2 欄 */
+.product-search > .product-tag-field {
+  grid-column: span 2;
 }
 
-@container(max-width:940px) {
-    .product-search {
-        grid-template-columns: repeat(2, minmax(0, 1fr))
-    }
-
-    .product-search-actions {
-        grid-column: 2
-    }
+/* main 寬度 ≤ 480px：單欄時改為佔滿 1 欄
+   ※ 需放在上方基本規則之後，才能蓋過 span 2 */
+@container (max-width: 480px) {
+  .product-search > .product-tag-field {
+    grid-column: 1;
+  }
 }
 
-@container(max-width:480px) {
-    .product-search {
-        grid-template-columns: minmax(0, 1fr)
-    }
+/* ==========================================================
+   6. 表單控制項統一高度（高權重覆寫）
+   ※ 選擇器帶有 form 與 .filter，權重高於前面的規則，
+     用來統一輸入框、下拉選單與按鈕的高度與外距
+   ========================================================== */
 
-    .product-search>.field:nth-child(2) {
-        grid-column: 1;
-        display: flex
-    }
-
-    .product-search-actions {
-        grid-column: 1
-    }
-}
-
-.product-search>.product-tag-field {
-    grid-column: span 2
-}
-
-@container(max-width:480px) {
-    .product-search>.product-tag-field {
-        grid-column: 1
-    }
-}
-
+/* 輸入框（不含單選 / 核取方塊）、下拉選單、按鈕：統一高度 40px，外距歸零 */
 form.product-search.filter input:not([type="radio"], [type="checkbox"]),
 form.product-search.filter select,
-form.product-search.filter .product-search-actions>.btn {
-    box-sizing: border-box;
-    height: 40px;
-    min-height: 40px;
-    max-height: 40px;
-    margin-top: 0;
-    margin-bottom: 0
+form.product-search.filter .product-search-actions > .btn {
+  box-sizing: border-box;
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
-form.product-search.filter .product-search-actions>.btn {
-    padding-top: 0;
-    padding-bottom: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    align-self: center
+/* 按鈕：內距歸零並垂直置中（與第 3 節的按鈕設定部分重複，此處權重較高） */
+form.product-search.filter .product-search-actions > .btn {
+  padding-top: 0;
+  padding-bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
 }

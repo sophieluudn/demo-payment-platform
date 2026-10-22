@@ -1,244 +1,343 @@
+/* ==========================================================
+   退款彈窗（Refund Modal）
+   目錄：
+   1.  彈窗本體
+   2.  標題列與關閉按鈕
+   3.  退款明細表格
+   4.  退款設定（退款原因）
+   5.  停用狀態、錯誤訊息與隱藏規則
+   6.  退款確認彈窗
+   7.  成功通知
+   8.  頁面狀態與退款按鈕
+   9.  響應式（螢幕寬度 ≤ 700px）
+   10. 「其他原因」輸入框
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ※ 部分選擇器以 .order-detail 開頭，彈窗必須位於 .order-detail
+     容器內才會套用這些樣式。
+   ========================================================== */
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>） */
 .order-detail dialog.refund-modal {
-    width: 80vw;
-    max-width: 1600px;
-    max-height: calc(100dvh - 48px);
-    margin: 20vh auto auto;
-    padding: 20px 20px 30px;
-    border: 0;
-    border-radius: 2px;
-    color: #606266;
-    font-size: 14px;
-    overflow: auto
+  width: 80vw;
+  max-width: 1600px;
+  max-height: calc(100dvh - 48px);
+  margin: 20vh auto auto;
+  padding: 20px 20px 30px;
+  border: 0;
+  border-radius: 2px;
+  color: #606266;
+  font-size: 14px;
+  overflow: auto;
 }
 
+/* 背景遮罩：退款彈窗與退款確認彈窗共用 */
 .refund-modal::backdrop,
 .refund-confirm::backdrop {
-    background: #0008
+  background: #0008;
 }
 
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（關閉按鈕以此為定位基準） */
 .refund-heading {
-    position: relative;
-    min-height: 79px
+  position: relative;
+  min-height: 79px;
 }
 
+/* 標題文字 */
 .order-detail .refund-heading h2 {
-    font-size: 18px;
-    font-weight: 400;
-    margin: 0
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0;
 }
 
+/* 關閉按鈕（定位於右上角；退款確認彈窗也共用此 class） */
 .refund-close {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 24px;
-    height: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: 0;
-    color: #909399
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: #909399;
 }
 
+/* ==========================================================
+   3. 退款明細表格
+   ========================================================== */
+
+/* 表格外層：內容過寬時於此橫向捲動 */
 .refund-table-wrap {
-    overflow: auto
+  overflow: auto;
 }
 
+/* 表格本體：最小寬度 900px，灰底 */
 .refund-table {
-    min-width: 900px;
-    background: #efefef;
-    border: 1px solid #e7e7e7
+  min-width: 900px;
+  background: #efefef;
+  border: 1px solid #e7e7e7;
 }
 
+/* 儲存格共用樣式（表頭與內容） */
 .refund-table th,
 .refund-table td {
-    border: 0;
-    height: 44px;
-    padding: 8px;
-    font-size: 14px;
-    font-weight: 400;
-    color: #606266
+  border: 0;
+  height: 44px;
+  padding: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  color: #606266;
 }
 
+/* 第一欄寬度 */
 .refund-table th:first-child {
-    width: 17%
+  width: 17%;
 }
 
+/* 儲存格內的輸入框（例如退款金額）：固定寬度、文字置中 */
 .refund-table td input {
-    width: 100px;
-    height: 32px;
-    padding: 0 10px;
-    text-align: center;
-    color: #606266
+  width: 100px;
+  height: 32px;
+  padding: 0 10px;
+  text-align: center;
+  color: #606266;
 }
 
+/* 表格內的按鈕：縮小尺寸 */
 .refund-table .btn {
-    font-size: 12px;
-    padding: 7px 15px;
-    font-weight: 400
+  font-size: 12px;
+  padding: 7px 15px;
+  font-weight: 400;
 }
 
+/* 合計列：高度略小 */
 .refund-total-row td {
-    height: 40px
+  height: 40px;
 }
 
+/* ==========================================================
+   4. 退款設定（退款原因）
+   ========================================================== */
+
+/* 設定區容器 */
 .refund-settings {
-    margin-top: 22px
+  margin-top: 22px;
 }
 
-.refund-settings>label {
-    display: block;
-    margin-bottom: 10px
+/* 設定項目標籤：獨占一行 */
+.refund-settings > label {
+  display: block;
+  margin-bottom: 10px;
 }
 
+/* 退款原因欄位列：下拉選單 + 輸入框橫向排列 */
 .refund-reason-fields {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
+/* 退款原因下拉選單：固定寬度 190px */
 .refund-reason-fields select {
-    width: 190px;
-    flex-shrink: 0;
-    color: #606266
+  width: 190px;
+  flex-shrink: 0;
+  color: #606266;
 }
 
+/* 退款原因輸入框：占滿剩餘空間 */
 .refund-reason-fields input {
-    flex: 1;
-    min-width: 0
+  flex: 1;
+  min-width: 0;
 }
 
+/* 輸入框與下拉選單：統一高度 */
 .refund-reason-fields input,
 .refund-reason-fields select {
-    height: 32px
+  height: 32px;
 }
 
+/* ==========================================================
+   5. 停用狀態、錯誤訊息與隱藏規則
+   ========================================================== */
+
+/* 按鈕停用狀態：灰字、白底（退款彈窗與退款確認彈窗共用） */
 .refund-modal button:disabled,
 .refund-confirm button:disabled {
-    cursor: not-allowed;
-    color: #b7bec8;
-    border-color: #ebeef5;
-    background: #fff
+  cursor: not-allowed;
+  color: #b7bec8;
+  border-color: #ebeef5;
+  background: #fff;
 }
 
+/* 輸入框停用狀態：灰字、灰底 */
 .refund-modal input:disabled {
-    color: #b7bec8;
-    background: #f5f7fa
+  color: #b7bec8;
+  background: #f5f7fa;
 }
 
+/* 錯誤訊息 */
 .refund-error {
-    color: #c03639;
-    margin: 12px 0 0
+  color: #c03639;
+  margin: 12px 0 0;
 }
 
+/* 帶有 hidden 屬性的元素一律隱藏（避免被 display 規則蓋過） */
 .refund-modal [hidden],
 .refund-notice[hidden] {
-    display: none
+  display: none;
 }
 
+/* ==========================================================
+   6. 退款確認彈窗
+   ========================================================== */
+
+/* 彈窗本體（<dialog>） */
 .refund-confirm {
-    width: 420px;
-    max-width: calc(100vw - 24px);
-    padding: 30px 15px 10px;
-    border: 1px solid #ebeef5;
-    border-radius: 4px;
-    color: #606266;
-    font-size: 14px;
-    box-shadow: 0 2px 12px #0002
+  width: 420px;
+  max-width: calc(100vw - 24px);
+  padding: 30px 15px 10px;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+  color: #606266;
+  font-size: 14px;
+  box-shadow: 0 2px 12px #0002;
 }
 
+/* 關閉按鈕：共用 .refund-close，此處調整位置 */
 .refund-confirm .refund-close {
-    top: 12px;
-    right: 12px
+  top: 12px;
+  right: 12px;
 }
 
+/* 確認訊息文字 */
 .refund-confirm p {
-    margin: 7px 0 18px
+  margin: 7px 0 18px;
 }
 
+/* 操作按鈕列：靠右排列 */
 .refund-confirm-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
 }
 
+/* 操作按鈕尺寸 */
 .refund-confirm-actions .btn {
-    font-size: 12px;
-    padding: 8px 15px
+  font-size: 12px;
+  padding: 8px 15px;
 }
 
+/* ==========================================================
+   7. 成功通知
+   ========================================================== */
+
+/* 通知條：固定於畫面上方中央，綠色成功樣式（隱藏規則見第 5 節） */
 .refund-notice {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    width: 380px;
-    max-width: calc(100vw - 24px);
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
-    background: #f0f9eb;
-    border: 1px solid #e1f3d8;
-    border-radius: 4px;
-    color: #438b20;
-    font-size: 14px
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: 380px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #f0f9eb;
+  border: 1px solid #e1f3d8;
+  border-radius: 4px;
+  color: #438b20;
+  font-size: 14px;
 }
 
+/* ==========================================================
+   8. 頁面狀態與退款按鈕
+   ========================================================== */
+
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .refund-modal-open {
-    overflow: hidden
+  overflow: hidden;
 }
 
+/* 退款按鈕：停用狀態（淺紅色） */
 .refund-button:disabled {
-    background: #fab6b6;
-    cursor: not-allowed
+  background: #fab6b6;
+  cursor: not-allowed;
 }
 
-@media(width <=700px) {
-    .order-detail dialog.refund-modal {
-        width: calc(100vw - 24px);
-        margin: 24px auto;
-        padding: 16px
-    }
+/* ==========================================================
+   9. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
 
-    .refund-reason-fields {
-        flex-direction: column
-    }
+@media (width <= 700px) {
+  /* 彈窗本體：改為幾乎滿版 */
+  .order-detail dialog.refund-modal {
+    width: calc(100vw - 24px);
+    margin: 24px auto;
+    padding: 16px;
+  }
 
-    .refund-reason-fields select {
-        width: 100%
-    }
+  /* 退款原因欄位列：下拉選單與輸入框改為上下排列 */
+  .refund-reason-fields {
+    flex-direction: column;
+  }
 
-    .refund-reason-fields input {
-        flex: auto;
-        width: 100%
-    }
-}
-
-#refund-other-reason {
-    display: block;
+  /* 退款原因下拉選單：滿寬 */
+  .refund-reason-fields select {
     width: 100%;
-    min-height: 54px;
-    padding: 8px 15px;
-    margin: 0 0 12px;
-    border: 1px solid #dcdfe6;
-    border-radius: 4px;
-    background: #fff;
-    color: #606266;
-    font: inherit;
-    resize: vertical
+  }
+
+  /* 退款原因輸入框：滿寬 */
+  .refund-reason-fields input {
+    flex: auto;
+    width: 100%;
+  }
 }
 
+/* ==========================================================
+   10. 「其他原因」輸入框
+   ※ 使用 id 選擇器（權重較高）；
+     聚焦外框使用全站的主題色變數 --color-primary
+   ========================================================== */
+
+/* 輸入框本體：滿寬、可垂直調整高度 */
+#refund-other-reason {
+  display: block;
+  width: 100%;
+  min-height: 54px;
+  padding: 8px 15px;
+  margin: 0 0 12px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #fff;
+  color: #606266;
+  font: inherit;
+  resize: vertical;
+}
+
+/* 提示文字（placeholder） */
 #refund-other-reason::placeholder {
-    color: #b7bec8
+  color: #b7bec8;
 }
 
+/* 取得焦點時的外框 */
 #refund-other-reason:focus {
-    outline: 1px solid var(--color-primary)
+  outline: 1px solid var(--color-primary);
 }
 
+/* 隱藏狀態（帶有 hidden 屬性時不顯示） */
 #refund-other-reason[hidden] {
-    display: none
+  display: none;
 }

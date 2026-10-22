@@ -1,22 +1,49 @@
 <!doctype html>
 <html lang="zh-Hant">
+
+    <!-- ==================================================
+         HEAD：頁面設定、樣式與腳本
+         ※ 載入順序會影響樣式覆蓋與腳本執行，請勿任意調換
+         ================================================== -->
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+
         <title>支付工具設定｜行動支付支援平台</title>
+
+        <!-- 樣式 1：全站共用樣式（?v= 為快取版本參數） -->
         <link rel="stylesheet" href="style.css?v=buttons-text-icon-4">
+
+        <!-- 樣式 2：系統管理頁共用樣式 -->
         <link rel="stylesheet" href="system-admin.css?v=search-layout-20261015">
+
+        <!-- 腳本 1：系統資料模型（defer：待 HTML 解析完成後依序執行） -->
         <script defer src="system-model.js?v=modal-confirm-20261015"></script>
+
+        <!-- 腳本 2：系統管理頁互動邏輯 -->
         <script defer src="system-admin.js?v=search-layout-20261015"></script>
+
+        <!-- 樣式 3 與腳本 3：元件庫 -->
         <link rel="stylesheet" href="ui/dist/element-app.css">
         <script defer src="ui/dist/element-app.js"></script>
     </head>
+
+
     <body>
+
+        <!-- ==================================================
+             ASIDE：左側導覽選單
+             ※ 四個群組預設皆展開（details open），目前頁面為「支付工具設定」
+             ================================================== -->
         <aside>
+
+            <!-- 首頁 -->
             <a class="nav-main " href="index.html">
                 <img class="icon" src="assets/house.svg" alt="">
                 首頁
             </a>
+
+            <!-- 選單群組：交易管理 -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/file-text.svg" alt="">
@@ -27,6 +54,8 @@
                     <a class="" href="transactions.html">所有交易紀錄</a>
                 </div>
             </details>
+
+            <!-- 選單群組：商品管理 -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/bag.svg" alt="">
@@ -38,6 +67,8 @@
                     <a class="" href="tags.html">標籤管理</a>
                 </div>
             </details>
+
+            <!-- 選單群組：統計報表 -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/briefcase.svg" alt="">
@@ -49,6 +80,8 @@
                     <a class="" href="statements.html">對帳單</a>
                 </div>
             </details>
+
+            <!-- 選單群組：系統管理（含目前頁面，以 active 標示） -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/gear.svg" alt="">
@@ -63,12 +96,24 @@
                     <a class="active" href="payments.html">支付工具設定</a>
                 </div>
             </details>
+
         </aside>
+
+
+        <!-- ==================================================
+             SHELL：右側主要區域（頂部列 + 內容）
+             ================================================== -->
         <div class="shell">
+
+            <!-- ---------- 頂部列 ---------- -->
             <header>
+
+                <!-- 側邊選單收合按鈕（對應頁尾的 #collapse checkbox） -->
                 <label for="collapse" class="menu-toggle" title="收合側邊選單">
                     <img class="icon" src="assets/list.svg" alt="">
                 </label>
+
+                <!-- 麵包屑導覽：首頁 / 系統管理 / 支付工具設定 -->
                 <div class="breadcrumb">
                     <a href="index.html">首頁</a>
                     <span>/</span>
@@ -76,6 +121,8 @@
                     <span>/</span>
                     <span>支付工具設定</span>
                 </div>
+
+                <!-- 帳號資訊：版本、重置權限、時間、頭像 -->
                 <div class="account">
                     <a class="version" href="#">v1.4.2</a>
                     <a class="reset" title="重新取得權限 token" href="payments.html">重置</a>
@@ -83,9 +130,17 @@
                     <span class="avatar">S</span>
                     <img class="icon" src="assets/chevron-down.svg" alt="">
                 </div>
+
             </header>
+
+            <!-- ---------- 主要內容 ---------- -->
             <main>
+
+                <!-- 操作列：新增支付工具 -->
                 <button type="button" class="btn success">新增</button>
+
+
+                <!-- 分頁列：總筆數、上一頁 / 目前頁碼 / 下一頁、跳頁輸入 -->
                 <div class="pager">
                     共 19 項
                     <img class="icon" src="assets/chevron-left.svg" alt="">
@@ -97,8 +152,13 @@
                         頁
                     </span>
                 </div>
+
+
+                <!-- 支付工具列表 -->
                 <div class="table-wrap payment-table">
                     <table>
+
+                        <!-- 表頭 -->
                         <thead>
                             <tr>
                                 <th>第三方金流平台</th>
@@ -108,7 +168,11 @@
                                 <th>幣別</th>
                             </tr>
                         </thead>
+
+                        <!-- 資料列（每列依序為：金流平台 / 支付工具 / 手續費 / 計價單位 / 幣別） -->
                         <tbody>
+
+                            <!-- 1. 藍新金流：Apple Pay -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -118,6 +182,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 2. 藍新金流：Google Pay -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -127,6 +193,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 3. Line Pay：Line Pay -->
                             <tr>
                                 <td>
                                     <a href="#">Line Pay</a>
@@ -136,6 +204,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 4. 藍新金流：ATM轉帳 -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -145,6 +215,8 @@
                                 <td>元</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 5. 藍新金流：超商代碼繳費 -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -154,6 +226,8 @@
                                 <td>元</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 6. 藍新金流：國內信用卡一次付清 -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -163,6 +237,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 7. 藍新金流：信用卡一次付清(國外卡) -->
                             <tr>
                                 <td>
                                     <a href="#">藍新金流</a>
@@ -172,6 +248,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 8. 汪新金流：汪星人信用卡（疑似測試資料） -->
                             <tr>
                                 <td>
                                     <a href="#">汪新金流</a>
@@ -181,6 +259,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 9. 村上春樹：村上春樹（疑似測試資料） -->
                             <tr>
                                 <td>
                                     <a href="#">村上春樹</a>
@@ -190,6 +270,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 10. 常常吃：fsadf（疑似測試資料） -->
                             <tr>
                                 <td>
                                     <a href="#">常常吃</a>
@@ -199,6 +281,8 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
+                            <!-- 11. 31231rewr：1發生（疑似測試資料） -->
                             <tr>
                                 <td>
                                     <a href="#">31231rewr</a>
@@ -208,11 +292,21 @@
                                 <td>%</td>
                                 <td>新台幣</td>
                             </tr>
+
                         </tbody>
                     </table>
                 </div>
+
             </main>
+
         </div>
+
+
+        <!-- ==================================================
+             側邊選單收合開關（隱藏的 checkbox）
+             ※ 位置需維持在 body 最後，樣式可能依賴此相鄰順序，請勿任意移動
+             ================================================== -->
         <input class="collapse-control" type="checkbox" id="collapse">
+
     </body>
 </html>

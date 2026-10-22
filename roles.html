@@ -1,112 +1,171 @@
 <!doctype html>
 <html lang="zh-Hant">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>角色管理｜行動支付支援平台</title>
-        <link rel="stylesheet" href="style.css?v=buttons-text-icon-4">
-        <link rel="stylesheet" href="system-admin.css?v=restore-20261015">
-        <script defer src="system-model.js?v=modal-confirm-20261015"></script>
-        <script defer src="role-modal.js?v=modal-confirm-20261015"></script>
-        <script defer src="system-admin.js?v=modal-confirm-20261015"></script>
-        <link rel="stylesheet" href="role-modal.css?v=restore-20261015">
-        <link rel="stylesheet" href="ui/dist/element-app.css">
-        <script defer src="ui/dist/element-app.js"></script>
-    </head>
-    <body>
-        <aside>
-            <a class="nav-main " href="index.html">
-                <img class="icon" src="assets/house.svg" alt="">首頁
-            </a>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/file-text.svg" alt="">交易管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="transactions.html">所有交易紀錄</a>
-                </div>
-            </details>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/bag.svg" alt="">商品管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="products.html">商品管理</a>
-                    <a class="" href="tags.html">標籤管理</a>
-                </div>
-            </details>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/briefcase.svg" alt="">統計報表
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="statistics.html">商品交易統計</a>
-                    <a class="" href="statements.html">對帳單</a>
-                </div>
-            </details>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/gear.svg" alt="">系統管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="users.html">使用者管理</a>
-                    <a class="active" href="roles.html">角色管理</a>
-                    <a class="" href="projects.html">專案管理</a>
-                    <a class="" href="stores.html">商店管理</a>
-                    <a class="" href="payments.html">支付工具設定</a>
-                </div>
-            </details>
-        </aside>
-        <div class="shell">
-            <header>
-                <label for="collapse" class="menu-toggle" title="收合側邊選單">
-                    <img class="icon" src="assets/list.svg" alt="">
-                </label>
-                <div class="breadcrumb">
-                    <a href="index.html">首頁</a>
-                    <span>/</span>系統管理
-                    <span>/</span>
-                    <span>角色管理</span>
-                </div>
-                <div class="account">
-                    <a class="version" href="#">v1.4.2</a>
-                    <a class="reset" title="重新取得權限 token" href="roles.html">重置</a>
-                    <span class="clock">12:56</span>
-                    <span class="avatar">S</span>
-                    <img class="icon" src="assets/chevron-down.svg" alt="">
-                </div>
-            </header>
-            <main>
-                <button type="button" class="btn success">新增</button>
-                <div class="pager">共 0 項
-                    <img class="icon" src="assets/chevron-left.svg" alt="">
-                    <a class="active" href="#">1</a>
-                    <img class="icon" src="assets/chevron-right.svg" alt="">
-                </div>
-                <div class="table-wrap ">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>編號</th>
-                                <th>角色名稱</th>
-                                <th>商店</th>
-                                <th>狀態</th>
-                                <th>功能</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="empty" colspan="5">暫無資料</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </main>
+  <!-- ==================================================
+         HEAD：頁面設定、樣式與腳本
+         ※ 載入順序會影響樣式覆蓋與腳本執行，請勿任意調換
+         ================================================== -->
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>角色管理｜行動支付支援平台</title>
+
+    <!-- 樣式 1：全站共用樣式（?v= 為快取版本參數） -->
+    <link rel="stylesheet" href="style.css?v=buttons-text-icon-4" />
+
+    <!-- 樣式 2：系統管理頁共用樣式 -->
+    <link rel="stylesheet" href="system-admin.css?v=restore-20261015" />
+
+    <!-- 腳本 1：系統資料模型（defer：待 HTML 解析完成後依序執行） -->
+    <script defer src="system-model.js?v=modal-confirm-20261015"></script>
+
+    <!-- 腳本 2：角色新增 / 編輯彈窗 -->
+    <script defer src="role-modal.js?v=modal-confirm-20261015"></script>
+
+    <!-- 腳本 3：系統管理頁互動邏輯 -->
+    <script defer src="system-admin.js?v=modal-confirm-20261015"></script>
+
+    <!-- 樣式 3：角色彈窗樣式 -->
+    <link rel="stylesheet" href="role-modal.css?v=restore-20261015" />
+
+    <!-- 樣式 4 與腳本 4：元件庫 -->
+    <link rel="stylesheet" href="ui/dist/element-app.css" />
+    <script defer src="ui/dist/element-app.js"></script>
+  </head>
+
+  <body>
+    <!-- ==================================================
+             ASIDE：左側導覽選單
+             ※ 四個群組預設皆展開（details open），目前頁面為「角色管理」
+             ================================================== -->
+    <aside>
+      <!-- 首頁 -->
+      <a class="nav-main" href="index.html">
+        <img class="icon" src="assets/house.svg" alt="" />首頁
+      </a>
+
+      <!-- 選單群組：交易管理 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/file-text.svg" alt="" />交易管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="transactions.html">所有交易紀錄</a>
         </div>
-        <input class="collapse-control" type="checkbox" id="collapse">
-    </body>
+      </details>
+
+      <!-- 選單群組：商品管理 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/bag.svg" alt="" />商品管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="products.html">商品管理</a>
+          <a class="" href="tags.html">標籤管理</a>
+        </div>
+      </details>
+
+      <!-- 選單群組：統計報表 -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/briefcase.svg" alt="" />統計報表
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="statistics.html">商品交易統計</a>
+          <a class="" href="statements.html">對帳單</a>
+        </div>
+      </details>
+
+      <!-- 選單群組：系統管理（含目前頁面，以 active 標示） -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/gear.svg" alt="" />系統管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="users.html">使用者管理</a>
+          <a class="active" href="roles.html">角色管理</a>
+          <a class="" href="projects.html">專案管理</a>
+          <a class="" href="stores.html">商店管理</a>
+          <a class="" href="payments.html">支付工具設定</a>
+        </div>
+      </details>
+    </aside>
+
+    <!-- ==================================================
+             SHELL：右側主要區域（頂部列 + 內容）
+             ================================================== -->
+    <div class="shell">
+      <!-- ---------- 頂部列 ---------- -->
+      <header>
+        <!-- 側邊選單收合按鈕（對應頁尾的 #collapse checkbox） -->
+        <label for="collapse" class="menu-toggle" title="收合側邊選單">
+          <img class="icon" src="assets/list.svg" alt="" />
+        </label>
+
+        <!-- 麵包屑導覽：首頁 / 系統管理 / 角色管理 -->
+        <div class="breadcrumb">
+          <a href="index.html">首頁</a>
+          <span>/</span>系統管理
+          <span>/</span>
+          <span>角色管理</span>
+        </div>
+
+        <!-- 帳號資訊：版本、重置權限、時間、頭像 -->
+        <div class="account">
+          <a class="version" href="#">v1.4.2</a>
+          <a class="reset" title="重新取得權限 token" href="roles.html">重置</a>
+          <span class="clock">12:56</span>
+          <span class="avatar">S</span>
+          <img class="icon" src="assets/chevron-down.svg" alt="" />
+        </div>
+      </header>
+
+      <!-- ---------- 主要內容 ---------- -->
+      <main>
+        <!-- 操作列：新增角色 -->
+        <button type="button" class="btn success">新增</button>
+
+        <!-- 分頁列：總筆數、上一頁 / 目前頁碼 / 下一頁 -->
+        <div class="pager">
+          共 0 項
+          <img class="icon" src="assets/chevron-left.svg" alt="" />
+          <a class="active" href="#">1</a>
+          <img class="icon" src="assets/chevron-right.svg" alt="" />
+        </div>
+
+        <!-- 角色列表 -->
+        <div class="table-wrap">
+          <table>
+            <!-- 表頭 -->
+            <thead>
+              <tr>
+                <th>編號</th>
+                <th>角色名稱</th>
+                <th>商店</th>
+                <th>狀態</th>
+                <th>功能</th>
+              </tr>
+            </thead>
+
+            <!-- 資料列（目前無資料，顯示「暫無資料」，橫跨全部 5 欄） -->
+            <tbody>
+              <tr>
+                <td class="empty" colspan="5">暫無資料</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- ==================================================
+             側邊選單收合開關（隱藏的 checkbox）
+             ※ 位置需維持在 body 最後，樣式可能依賴此相鄰順序，請勿任意移動
+             ================================================== -->
+    <input class="collapse-control" type="checkbox" id="collapse" />
+  </body>
 </html>

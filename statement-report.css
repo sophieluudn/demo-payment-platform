@@ -1,127 +1,184 @@
+/* ==========================================================
+   對帳單報表彈窗（Statement Report）
+   目錄：
+   1. 彈窗本體
+   2. 關閉按鈕與說明文字
+   3. 分頁標籤
+   4. 報表捲動區與表格
+   5. 操作列與頁面狀態
+   6. 響應式（螢幕寬度 ≤ 700px）
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ========================================================== */
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>）：接近滿版，內容區自行捲動，因此外層不捲動 */
 .statement-report {
-    width: 90vw;
-    max-width: 1800px;
-    height: 96dvh;
-    max-height: calc(100dvh - 36px);
-    margin: 18px auto;
-    padding: 20px 20px 10px;
-    border: 0;
-    border-radius: 2px;
-    background: #fff;
-    color: #606266;
-    overflow: hidden
+  width: 90vw;
+  max-width: 1800px;
+  height: 96dvh;
+  max-height: calc(100dvh - 36px);
+  margin: 18px auto;
+  padding: 20px 20px 10px;
+  border: 0;
+  border-radius: 2px;
+  background: #fff;
+  color: #606266;
+  overflow: hidden;
 }
 
+/* 彈窗背景遮罩 */
 .statement-report::backdrop {
-    background: #0008
+  background: #0008;
 }
 
+/* ==========================================================
+   2. 關閉按鈕與說明文字
+   ========================================================== */
+
+/* 關閉按鈕：以彈窗為定位基準，固定於右上角 */
 .report-close {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: 0;
-    background: transparent;
-    color: #909399
+  position: absolute;
+  right: 20px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  background: transparent;
+  color: #909399;
 }
 
+/* 報表說明文字（灰色小字）：右側預留 32px，避免與關閉按鈕重疊 */
 .report-context {
-    font-size: 12px;
-    min-height: 40px;
-    padding-right: 32px;
-    color: #909399
+  font-size: 12px;
+  min-height: 40px;
+  padding-right: 32px;
+  color: #909399;
 }
 
+/* ==========================================================
+   3. 分頁標籤
+   ========================================================== */
+
+/* 標籤列：橫向排列，下方有分隔線 */
 .report-tabs {
-    display: flex;
-    gap: 40px;
-    border-bottom: 2px solid #e4e7ed;
-    height: 40px;
-    margin-bottom: 14px
+  display: flex;
+  gap: 40px;
+  border-bottom: 2px solid #e4e7ed;
+  height: 40px;
+  margin-bottom: 14px;
 }
 
+/* 單一標籤按鈕：預設無底線 */
 .report-tabs button {
-    padding: 0 0 10px;
-    border: 0;
-    border-bottom: 2px solid transparent;
-    background: transparent;
-    color: #303133
+  padding: 0 0 10px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: #303133;
 }
 
+/* 目前選取的標籤（由 aria-selected 控制）：藍色文字與底線 */
 .report-tabs button[aria-selected="true"] {
-    color: #409eff;
-    border-bottom-color: #409eff
+  color: #409eff;
+  border-bottom-color: #409eff;
 }
 
+/* ==========================================================
+   4. 報表捲動區與表格
+   ========================================================== */
+
+/* 捲動區：高度扣除上方說明、標籤與下方操作列所需空間（固定值 160px）
+   ※ 調整上下區塊高度時，需同步調整此數值（手機版為 170px，見第 6 節） */
 .report-scroll {
-    overflow: auto;
-    height: calc(100% - 160px);
-    border: 1px solid #ebeef5
+  overflow: auto;
+  height: calc(100% - 160px);
+  border: 1px solid #ebeef5;
 }
 
+/* 表格：最小寬度 1550px，內容過寬時於捲動區橫向捲動 */
 .report-scroll table {
-    min-width: 1550px
+  min-width: 1550px;
 }
 
+/* 儲存格共用樣式（表頭、內容與合計列），過長文字自動換行 */
 .report-scroll th,
 .report-scroll td {
-    padding: 12px 8px;
-    font-size: 14px;
-    overflow-wrap: anywhere
+  padding: 12px 8px;
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
+/* 表頭：捲動時固定於頂端 */
 .report-scroll thead th {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background: #fff;
-    height: 70px
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #fff;
+  height: 70px;
 }
 
+/* 內容列高度 */
 .report-scroll tbody td {
-    height: 96px
+  height: 96px;
 }
 
+/* 表尾（合計列）：捲動時固定於底部 */
 .report-scroll tfoot td {
-    position: sticky;
-    bottom: 0;
-    background: #f5f7fa;
-    height: 70px
+  position: sticky;
+  bottom: 0;
+  background: #f5f7fa;
+  height: 70px;
 }
 
+/* ==========================================================
+   5. 操作列與頁面狀態
+   ========================================================== */
+
+/* 操作按鈕列：靠右排列 */
 .report-actions {
-    display: flex;
-    justify-content: flex-end;
-    padding-top: 10px
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 10px;
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .statement-report-open {
-    overflow: hidden
+  overflow: hidden;
 }
 
-@media(width <=700px) {
-    .statement-report {
-        width: calc(100vw - 24px);
-        margin: 12px auto;
-        height: calc(100dvh - 24px);
-        max-height: calc(100dvh - 24px);
-        padding: 16px
-    }
+/* ==========================================================
+   6. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
 
-    .report-context {
-        min-height: 50px
-    }
+@media (width <= 700px) {
+  /* 彈窗本體：改為幾乎滿版 */
+  .statement-report {
+    width: calc(100vw - 24px);
+    margin: 12px auto;
+    height: calc(100dvh - 24px);
+    max-height: calc(100dvh - 24px);
+    padding: 16px;
+  }
 
-    .report-tabs {
-        gap: 28px
-    }
+  /* 說明文字：加高以容納換行 */
+  .report-context {
+    min-height: 50px;
+  }
 
-    .report-scroll {
-        height: calc(100% - 170px)
-    }
+  /* 標籤列：縮小間距 */
+  .report-tabs {
+    gap: 28px;
+  }
+
+  /* 捲動區：預留空間增加為 170px（對應上方說明文字加高） */
+  .report-scroll {
+    height: calc(100% - 170px);
+  }
 }

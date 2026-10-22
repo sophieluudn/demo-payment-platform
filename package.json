@@ -1,33 +1,10 @@
 {
   "name": "payment-platform",
   "version": "1.0.0",
-  "main": "app.js",
-  "scripts": {
-    "test": "node --test tests/system-model.test.js tests/role-scopes.test.js tests/fee-schedules.test.js tests/authorization.test.js",
-    "start": "node server.js",
-    "test:browser": "playwright test",
-    "build": "node build-ui.js",
-    "prestart": "npm run build",
-    "pretest:browser": "npm run build"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "description": "System management for the payment platform",
-  "devDependencies": {
-    "@playwright/test": "^1.63.0",
-    "esbuild": "^0.28.2",
-    "stylelint": "^17.16.0",
-    "stylelint-config-standard": "^40.0.0"
-  },
-  "dependencies": {
-    "@element-plus/icons-vue": "^2.3.2",
-    "element-plus": "^2.14.7",
-    "vue": "^3.5.44"
-  },
-  "directories": {
-    "test": "tests"
-  },
+  "license": "ISC",
+  "author": "",
+  "keywords": [],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sophieluudn/demo-payment-platform.git"
@@ -35,5 +12,28 @@
   "bugs": {
     "url": "https://github.com/sophieluudn/demo-payment-platform/issues"
   },
-  "homepage": "https://github.com/sophieluudn/demo-payment-platform#readme"
+  "homepage": "https://github.com/sophieluudn/demo-payment-platform#readme",
+  "main": "app.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "build": "node build-ui.js",
+    "prestart": "npm run build",
+    "start": "node server.js",
+    "test": "node --test tests/system-model.test.js tests/role-scopes.test.js tests/fee-schedules.test.js tests/authorization.test.js",
+    "pretest:browser": "npm run build",
+    "test:browser": "playwright test"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.2",
+    "element-plus": "^2.14.7",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "esbuild": "^0.28.2",
+    "stylelint": "^17.16.0",
+    "stylelint-config-standard": "^40.0.0"
+  }
 }

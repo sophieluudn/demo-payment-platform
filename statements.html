@@ -1,311 +1,420 @@
 <!doctype html>
 <html lang="zh-Hant">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>對帳單｜行動支付支援平台</title>
-        <link rel="stylesheet" href="style.css?v=buttons-text-icon-4">
-        <link rel="stylesheet" href="statements.css?v=inline-search-1">
-        <link rel="stylesheet" href="statement-report.css">
-        <link rel="stylesheet" href="report-search.css?v=grid-1">
-        <link rel="stylesheet" href="ui/dist/element-app.css">
-        <script defer src="ui/dist/element-app.js"></script>
-    </head>
-    <body>
-        <aside>
-            <a class="nav-main " href="index.html">
-                <img class="icon" src="assets/house.svg" alt="">首頁
-            </a>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/file-text.svg" alt="">交易管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="transactions.html">所有交易紀錄</a>
-                </div>
-            </details>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/bag.svg" alt="">商品管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="products.html">商品管理</a>
-                    <a class="" href="tags.html">標籤管理</a>
-                </div>
-            </details>
-            <details open>
-                <summary>
-                    <img class="icon" src="assets/briefcase.svg" alt="">統計報表
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="statistics.html">商品交易統計</a>
-                    <a class="active" href="statements.html">對帳單</a>
-                </div>
-            </details>
-            <details>
-                <summary>
-                    <img class="icon" src="assets/gear.svg" alt="">系統管理
-                    <img class="icon" src="assets/chevron-up.svg" alt="">
-                </summary>
-                <div class="submenu">
-                    <a class="" href="users.html">使用者管理</a>
-                    <a class="" href="roles.html">角色管理</a>
-                    <a class="" href="projects.html">專案管理</a>
-                    <a class="" href="stores.html">商店管理</a>
-                    <a class="" href="payments.html">支付工具設定</a>
-                </div>
-            </details>
-        </aside>
-        <div class="shell">
-            <header>
-                <label for="collapse" class="menu-toggle" title="收合側邊選單">
-                    <img class="icon" src="assets/list.svg" alt="">
-                </label>
-                <div class="breadcrumb">
-                    <a href="index.html">首頁</a>
-                    <span>/</span>統計報表
-                    <span>/</span>
-                    <span>對帳單</span>
-                </div>
-                <div class="account">
-                    <a class="version" href="#">v1.4.2</a>
-                    <a class="reset" title="重新取得權限 token" href="statements.html">重置</a>
-                    <span class="clock">12:56</span>
-                    <span class="avatar">S</span>
-                    <img class="icon" src="assets/chevron-down.svg" alt="">
-                </div>
-            </header>
-            <main>
-                <form class="filter statement-search report-search-grid" method="get">
-                    <label class="field">
-                        <span>對帳單類型</span>
-                        <select aria-label="請選擇專案名稱" style="width:300px">
-                            <option>請選擇專案名稱</option>
-                            <option>全部</option>
-                            <option>行動發展部</option>
-                        </select>
-                    </label>
-                    <label class="field">
-                        <span>商店名稱</span>
-                        <select aria-label="全部　×　 + 66" style="width:400px">
-                            <option>全部　×　 + 66</option>
-                            <option>全部</option>
-                            <option>行動發展部</option>
-                        </select>
-                    </label>
-                    <div class="report-search-actions">
-                        <button type="button" class="btn primary">搜尋</button>
-                        <button type="reset" class="btn plain">清除</button>
-                    </div>
-                </form>
-                <button type="button" class="btn success" data-permission-action="create">新增</button>
-                <div class="pager">共 167 項
-                    <select aria-label="50項/頁" style="width:100px">
-                        <option>50項/頁</option>
-                        <option>全部</option>
-                        <option>行動發展部</option>
-                    </select>
-                    <img class="icon" src="assets/chevron-left.svg" alt="">
-                    <a class="active" href="#">1</a>
-                    <a href="#">2</a>
-                    <a href="#">3</a>
-                    <a href="#">4</a>
-                    <img class="icon" src="assets/chevron-right.svg" alt="">
-                </div>
-                <div class="table-wrap statement-table">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>名稱</th>
-                                <th>類型</th>
-                                <th>商店</th>
-                                <th>專案</th>
-                                <th>查詢區間</th>
-                                <th>封存時間</th>
-                                <th>報表</th>
-                                <th>備註</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>188</td>
-                                <td>測試用</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">行動發展部</span>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <span class="chip">行動發展部</span>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                    <span class="chip">測試活動_Paid_商品</span>
-                                    <span class="chip">20211005活動_PAID</span>
-                                </td>
-                                <td>
-                                    <a href="#">2025/09/01 - 2026/04/30</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td>187</td>
-                                <td>20260316_1</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">行動發展部</span>
-                                </td>
-                                <td>
-                                    <span class="chip">行動發展部</span>
-                                    <span class="chip">測試活動_Paid_商品</span>
-                                    <span class="chip">20211005活動_PAID</span>
-                                </td>
-                                <td>
-                                    <a href="#">2026/03/16 - 2026/03/16</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td>186</td>
-                                <td>Test20260602-002</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <a href="#">2026/01/01 - 2026/01/31</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td>185</td>
-                                <td>20260602-001</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <a href="#">2026/04/01 - 2026/05/31</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td>184</td>
-                                <td>20260602-001</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                </td>
-                                <td>
-                                    <a href="#">2026/04/01 - 2026/05/31</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                            <tr>
-                                <td>183</td>
-                                <td>20260531</td>
-                                <td>財務(全部)</td>
-                                <td>
-                                    <span class="chip">測試平台</span>
-                                    <span class="chip">活動報名平台</span>
-                                    <span class="chip">聯經出版</span>
-                                    <span class="chip">行動發展部</span>
-                                    <span class="chip">教育事業部</span>
-                                    <span class="chip">願景工作室</span>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                    <span class="chip">經濟日報工服部</span>
-                                    <span class="chip">聯合線上融媒體</span>
-                                    <span class="chip">聯合線上事業發展部</span>
-                                    <span class="chip">數據發展部</span>
-                                    <span class="chip">娛樂生活事業部</span>
-                                </td>
-                                <td>
-                                    <span class="chip">測試平台</span>
-                                    <span class="chip">活動報名平台</span>
-                                    <span class="chip">聯經出版</span>
-                                    <span class="chip">行動發展部</span>
-                                    <span class="chip">教育事業部</span>
-                                    <span class="chip">願景工作室</span>
-                                    <span class="chip">發行展業部</span>
-                                    <span class="chip">U好學</span>
-                                    <span class="chip">經濟日報工服部</span>
-                                    <span class="chip">聯合線上融媒體</span>
-                                    <span class="chip">聯合線上事業發展部</span>
-                                    <span class="chip">數據發展部</span>
-                                    <span class="chip">娛樂生活事業部</span>
-                                </td>
-                                <td>
-                                    <a href="#">2026/05/01 - 2026/05/31</a>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn plain">封存</button>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn primary">檢視 / 匯出</button>
-                                </td>
-                                <td></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </main>
+  <!-- ==================================================
+         HEAD：頁面設定與樣式
+         ※ 樣式載入順序會影響覆蓋結果，請勿任意調換
+         ================================================== -->
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>對帳單｜行動支付支援平台</title>
+
+    <!-- 樣式 1：全站共用樣式（?v= 為快取版本參數） -->
+    <link rel="stylesheet" href="style.css?v=buttons-text-icon-4" />
+
+    <!-- 樣式 2：對帳單頁樣式 -->
+    <link rel="stylesheet" href="statements.css?v=inline-search-1" />
+
+    <!-- 樣式 3：對帳單報表彈窗 -->
+    <link rel="stylesheet" href="statement-report.css" />
+
+    <!-- 樣式 4：報表搜尋區（網格版型） -->
+    <link rel="stylesheet" href="report-search.css?v=grid-1" />
+
+    <!-- 樣式 5 與腳本：元件庫（defer：待 HTML 解析完成後執行） -->
+    <link rel="stylesheet" href="ui/dist/element-app.css" />
+    <script defer src="ui/dist/element-app.js"></script>
+  </head>
+
+  <body>
+    <!-- ==================================================
+             ASIDE：左側導覽選單
+             ※ 「交易管理」「商品管理」「統計報表」預設展開（details open），
+               「系統管理」預設收合；目前頁面為「對帳單」
+             ================================================== -->
+    <aside>
+      <!-- 首頁 -->
+      <a class="nav-main" href="index.html">
+        <img class="icon" src="assets/house.svg" alt="" />首頁
+      </a>
+
+      <!-- 選單群組：交易管理（展開） -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/file-text.svg" alt="" />交易管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="transactions.html">所有交易紀錄</a>
         </div>
-        <input class="collapse-control" type="checkbox" id="collapse">
-        <script src="system-model.js?v=fee-schedules-1"></script>
-        <script src="data-access.js"></script>
-        <script src="transaction-fees.js?v=fee-schedules-1"></script>
-        <script src="transaction-data.js?v=modal-confirm-20261015"></script>
-        <script src="statement-report.js?v=modal-confirm-20261015"></script>
-        <script src="statements.js?v=modal-confirm-20261015"></script>
-    </body>
+      </details>
+
+      <!-- 選單群組：商品管理（展開） -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/bag.svg" alt="" />商品管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="products.html">商品管理</a>
+          <a class="" href="tags.html">標籤管理</a>
+        </div>
+      </details>
+
+      <!-- 選單群組：統計報表（展開，含目前頁面，以 active 標示） -->
+      <details open>
+        <summary>
+          <img class="icon" src="assets/briefcase.svg" alt="" />統計報表
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="statistics.html">商品交易統計</a>
+          <a class="active" href="statements.html">對帳單</a>
+        </div>
+      </details>
+
+      <!-- 選單群組：系統管理（收合） -->
+      <details>
+        <summary>
+          <img class="icon" src="assets/gear.svg" alt="" />系統管理
+          <img class="icon" src="assets/chevron-up.svg" alt="" />
+        </summary>
+        <div class="submenu">
+          <a class="" href="users.html">使用者管理</a>
+          <a class="" href="roles.html">角色管理</a>
+          <a class="" href="projects.html">專案管理</a>
+          <a class="" href="stores.html">商店管理</a>
+          <a class="" href="payments.html">支付工具設定</a>
+        </div>
+      </details>
+    </aside>
+
+    <!-- ==================================================
+             SHELL：右側主要區域（頂部列 + 內容）
+             ================================================== -->
+    <div class="shell">
+      <!-- ---------- 頂部列 ---------- -->
+      <header>
+        <!-- 側邊選單收合按鈕（對應頁尾的 #collapse checkbox） -->
+        <label for="collapse" class="menu-toggle" title="收合側邊選單">
+          <img class="icon" src="assets/list.svg" alt="" />
+        </label>
+
+        <!-- 麵包屑導覽：首頁 / 統計報表 / 對帳單 -->
+        <div class="breadcrumb">
+          <a href="index.html">首頁</a>
+          <span>/</span>統計報表
+          <span>/</span>
+          <span>對帳單</span>
+        </div>
+
+        <!-- 帳號資訊：版本、重置權限、時間、頭像 -->
+        <div class="account">
+          <a class="version" href="#">v1.4.2</a>
+          <a class="reset" title="重新取得權限 token" href="statements.html"
+            >重置</a
+          >
+          <span class="clock">12:56</span>
+          <span class="avatar">S</span>
+          <img class="icon" src="assets/chevron-down.svg" alt="" />
+        </div>
+      </header>
+
+      <!-- ---------- 主要內容 ---------- -->
+      <main>
+        <!-- ==============================
+                     搜尋區
+                     （同時套用 statement-search 與 report-search-grid 樣式）
+                     ============================== -->
+        <form class="filter statement-search report-search-grid" method="get">
+          <!-- 欄位 1：對帳單類型 -->
+          <label class="field">
+            <span>對帳單類型</span>
+            <select aria-label="請選擇專案名稱" style="width: 300px">
+              <option>請選擇專案名稱</option>
+              <option>全部</option>
+              <option>行動發展部</option>
+            </select>
+          </label>
+
+          <!-- 欄位 2：商店名稱 -->
+          <label class="field">
+            <span>商店名稱</span>
+            <select aria-label="全部　×　 + 66" style="width: 400px">
+              <option>全部　×　 + 66</option>
+              <option>全部</option>
+              <option>行動發展部</option>
+            </select>
+          </label>
+
+          <!-- 操作按鈕：搜尋 / 清除 -->
+          <div class="report-search-actions">
+            <button type="button" class="btn primary">搜尋</button>
+            <button type="reset" class="btn plain">清除</button>
+          </div>
+        </form>
+
+        <!-- 操作列：新增對帳單（權限代碼：create） -->
+        <button
+          type="button"
+          class="btn success"
+          data-permission-action="create"
+        >
+          新增
+        </button>
+
+        <!-- ==============================
+                     分頁列：總筆數、每頁筆數、頁碼切換
+                     ============================== -->
+        <div class="pager">
+          共 167 項
+          <select aria-label="50項/頁" style="width: 100px">
+            <option>50項/頁</option>
+            <option>全部</option>
+            <option>行動發展部</option>
+          </select>
+          <img class="icon" src="assets/chevron-left.svg" alt="" />
+          <a class="active" href="#">1</a>
+          <a href="#">2</a>
+          <a href="#">3</a>
+          <a href="#">4</a>
+          <img class="icon" src="assets/chevron-right.svg" alt="" />
+        </div>
+
+        <!-- ==============================
+                     對帳單列表
+                     ============================== -->
+        <div class="table-wrap statement-table">
+          <table>
+            <!-- 表頭 -->
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>名稱</th>
+                <th>類型</th>
+                <th>商店</th>
+                <th>專案</th>
+                <th>查詢區間</th>
+                <th>封存時間</th>
+                <th>報表</th>
+                <th>備註</th>
+              </tr>
+            </thead>
+
+            <!-- 資料列
+                             ※ 每列欄位依序為：ID / 名稱 / 類型 / 商店（標籤）/ 專案（標籤）/
+                               查詢區間（連結）/ 封存（按鈕）/ 報表（檢視 / 匯出）/ 備註 -->
+            <tbody>
+              <!-- ID 188：測試用 -->
+              <tr>
+                <td>188</td>
+                <td>測試用</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">行動發展部</span>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <span class="chip">行動發展部</span>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                  <span class="chip">測試活動_Paid_商品</span>
+                  <span class="chip">20211005活動_PAID</span>
+                </td>
+                <td>
+                  <a href="#">2025/09/01 - 2026/04/30</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- ID 187：20260316_1 -->
+              <tr>
+                <td>187</td>
+                <td>20260316_1</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">行動發展部</span>
+                </td>
+                <td>
+                  <span class="chip">行動發展部</span>
+                  <span class="chip">測試活動_Paid_商品</span>
+                  <span class="chip">20211005活動_PAID</span>
+                </td>
+                <td>
+                  <a href="#">2026/03/16 - 2026/03/16</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- ID 186：Test20260602-002 -->
+              <tr>
+                <td>186</td>
+                <td>Test20260602-002</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <a href="#">2026/01/01 - 2026/01/31</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- ID 185：20260602-001 -->
+              <tr>
+                <td>185</td>
+                <td>20260602-001</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <a href="#">2026/04/01 - 2026/05/31</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- ID 184：20260602-001（名稱與內容同 ID 185） -->
+              <tr>
+                <td>184</td>
+                <td>20260602-001</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                </td>
+                <td>
+                  <a href="#">2026/04/01 - 2026/05/31</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+
+              <!-- ID 183：20260531（商店與專案皆為全部 13 項） -->
+              <tr>
+                <td>183</td>
+                <td>20260531</td>
+                <td>財務(全部)</td>
+                <td>
+                  <span class="chip">測試平台</span>
+                  <span class="chip">活動報名平台</span>
+                  <span class="chip">聯經出版</span>
+                  <span class="chip">行動發展部</span>
+                  <span class="chip">教育事業部</span>
+                  <span class="chip">願景工作室</span>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                  <span class="chip">經濟日報工服部</span>
+                  <span class="chip">聯合線上融媒體</span>
+                  <span class="chip">聯合線上事業發展部</span>
+                  <span class="chip">數據發展部</span>
+                  <span class="chip">娛樂生活事業部</span>
+                </td>
+                <td>
+                  <span class="chip">測試平台</span>
+                  <span class="chip">活動報名平台</span>
+                  <span class="chip">聯經出版</span>
+                  <span class="chip">行動發展部</span>
+                  <span class="chip">教育事業部</span>
+                  <span class="chip">願景工作室</span>
+                  <span class="chip">發行展業部</span>
+                  <span class="chip">U好學</span>
+                  <span class="chip">經濟日報工服部</span>
+                  <span class="chip">聯合線上融媒體</span>
+                  <span class="chip">聯合線上事業發展部</span>
+                  <span class="chip">數據發展部</span>
+                  <span class="chip">娛樂生活事業部</span>
+                </td>
+                <td>
+                  <a href="#">2026/05/01 - 2026/05/31</a>
+                </td>
+                <td>
+                  <button type="button" class="btn plain">封存</button>
+                </td>
+                <td>
+                  <button type="button" class="btn primary">檢視 / 匯出</button>
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+
+    <!-- ==================================================
+             側邊選單收合開關（隱藏的 checkbox）
+             ※ 位置需維持在 shell 之後，樣式可能依賴此相鄰順序，請勿任意移動
+             ================================================== -->
+    <input class="collapse-control" type="checkbox" id="collapse" />
+
+    <!-- ==================================================
+             頁面腳本（置於 body 最後，未使用 defer，依序同步載入執行）
+             ※ 順序：資料與費用模型 → 交易資料 → 報表彈窗 → 頁面邏輯，
+               後面的腳本可能會用到前面的腳本，請勿任意調換
+             ================================================== -->
+
+    <!-- 系統資料模型 -->
+    <script src="system-model.js?v=fee-schedules-1"></script>
+
+    <!-- 資料存取 -->
+    <script src="data-access.js"></script>
+
+    <!-- 交易手續費計算 -->
+    <script src="transaction-fees.js?v=fee-schedules-1"></script>
+
+    <!-- 交易資料 -->
+    <script src="transaction-data.js?v=modal-confirm-20261015"></script>
+
+    <!-- 對帳單報表彈窗 -->
+    <script src="statement-report.js?v=modal-confirm-20261015"></script>
+
+    <!-- 對帳單頁面邏輯 -->
+    <script src="statements.js?v=modal-confirm-20261015"></script>
+  </body>
 </html>

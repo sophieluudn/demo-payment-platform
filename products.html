@@ -1,21 +1,49 @@
 <!doctype html>
 <html lang="zh-Hant">
+
+    <!-- ==================================================
+         HEAD：頁面設定、樣式與腳本
+         ※ 樣式載入順序會影響覆蓋結果，請勿任意調換
+         ================================================== -->
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+
         <title>商品管理｜行動支付支援平台</title>
+
+        <!-- 樣式 1：全站共用樣式（?v= 為快取版本參數） -->
         <link rel="stylesheet" href="style.css?v=buttons-text-icon-4">
+
+        <!-- 樣式 2：商品新增 / 編輯彈窗與商品列表 -->
         <link rel="stylesheet" href="product-modal.css?v=button-gap-3">
+
+        <!-- 樣式 3：付款連結管理彈窗 -->
         <link rel="stylesheet" href="payment-links.css">
+
+        <!-- 樣式 4：商品搜尋區 -->
         <link rel="stylesheet" href="product-search.css?v=height-40-3">
+
+        <!-- 樣式 5 與腳本：元件庫（defer：待 HTML 解析完成後執行） -->
         <link rel="stylesheet" href="ui/dist/element-app.css">
         <script defer src="ui/dist/element-app.js"></script>
     </head>
+
+
     <body>
+
+        <!-- ==================================================
+             ASIDE：左側導覽選單
+             ※ 「交易管理」「商品管理」預設展開（details open），
+               其餘群組預設收合；目前頁面為「商品管理」
+             ================================================== -->
         <aside>
+
+            <!-- 首頁 -->
             <a class="nav-main " href="index.html">
                 <img class="icon" src="assets/house.svg" alt="">首頁
             </a>
+
+            <!-- 選單群組：交易管理（展開） -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/file-text.svg" alt="">交易管理
@@ -25,6 +53,8 @@
                     <a class="" href="transactions.html">所有交易紀錄</a>
                 </div>
             </details>
+
+            <!-- 選單群組：商品管理（展開，含目前頁面，以 active 標示） -->
             <details open>
                 <summary>
                     <img class="icon" src="assets/bag.svg" alt="">商品管理
@@ -35,6 +65,8 @@
                     <a class="" href="tags.html">標籤管理</a>
                 </div>
             </details>
+
+            <!-- 選單群組：統計報表（收合） -->
             <details>
                 <summary>
                     <img class="icon" src="assets/briefcase.svg" alt="">統計報表
@@ -45,6 +77,8 @@
                     <a class="" href="statements.html">對帳單</a>
                 </div>
             </details>
+
+            <!-- 選單群組：系統管理（收合） -->
             <details>
                 <summary>
                     <img class="icon" src="assets/gear.svg" alt="">系統管理
@@ -58,18 +92,32 @@
                     <a class="" href="payments.html">支付工具設定</a>
                 </div>
             </details>
+
         </aside>
+
+
+        <!-- ==================================================
+             SHELL：右側主要區域（頂部列 + 內容）
+             ================================================== -->
         <div class="shell">
+
+            <!-- ---------- 頂部列 ---------- -->
             <header>
+
+                <!-- 側邊選單收合按鈕（對應頁尾的 #collapse checkbox） -->
                 <label for="collapse" class="menu-toggle" title="收合側邊選單">
                     <img class="icon" src="assets/list.svg" alt="">
                 </label>
+
+                <!-- 麵包屑導覽：首頁 / 商品管理 / 商品管理 -->
                 <div class="breadcrumb">
                     <a href="index.html">首頁</a>
                     <span>/</span>商品管理
                     <span>/</span>
                     <span>商品管理</span>
                 </div>
+
+                <!-- 帳號資訊：版本、重置權限、時間、頭像 -->
                 <div class="account">
                     <a class="version" href="#">v1.4.2</a>
                     <a class="reset" title="重新取得權限 token" href="products.html">重置</a>
@@ -77,9 +125,18 @@
                     <span class="avatar">S</span>
                     <img class="icon" src="assets/chevron-down.svg" alt="">
                 </div>
+
             </header>
+
+            <!-- ---------- 主要內容 ---------- -->
             <main>
+
+                <!-- ==============================
+                     搜尋區（樣式：product-search.css）
+                     ============================== -->
                 <form class="filter product-search" method="get">
+
+                    <!-- 欄位 1：專案名稱 -->
                     <label class="field">
                         <span>專案名稱</span>
                         <select aria-label="請選擇專案" style="width:200px">
@@ -88,11 +145,15 @@
                             <option>行動發展部</option>
                         </select>
                     </label>
+
+                    <!-- 欄位 2：商品名稱 + 開始日期（版面橫跨 2 欄，內部再分 2 欄） -->
                     <label class="field">
                         <span>商品名稱</span>
                         <input aria-label="請輸入商品名稱" placeholder="請輸入商品名稱" style="width:300px">
                         <input aria-label="開始日期" placeholder="開始日期" style="width:220px">
                     </label>
+
+                    <!-- 欄位 3：商品狀態（必填；第一個選項為停用的提示選項） -->
                     <label class="field">
                         <span>商品狀態</span>
                         <select
@@ -107,6 +168,8 @@
                             <option>已下架</option>
                         </select>
                     </label>
+
+                    <!-- 欄位 4：分類標籤（版面橫跨 2 欄） -->
                     <label class="field product-tag-field">
                         <span>分類標籤</span>
                         <select aria-label="請選擇標籤" style="width:745px">
@@ -115,12 +178,23 @@
                             <option>行動發展部</option>
                         </select>
                     </label>
+
+                    <!-- 操作按鈕：搜尋 / 清除 -->
                     <div class="product-search-actions">
                         <button type="button" class="btn primary">搜尋</button>
                         <button type="reset" class="btn plain">清除</button>
                     </div>
+
                 </form>
+
+
+                <!-- 操作列：新增商品（權限代碼：create） -->
                 <button data-permission-action="create" type="button" class="btn success">新增</button>
+
+
+                <!-- ==============================
+                     分頁列：總筆數、每頁筆數、頁碼切換
+                     ============================== -->
                 <div class="pager">共 84 項
                     <select aria-label="50項/頁" style="width:100px">
                         <option>50項/頁</option>
@@ -132,8 +206,15 @@
                     <a href="#">2</a>
                     <img class="icon" src="assets/chevron-right.svg" alt="">
                 </div>
+
+
+                <!-- ==============================
+                     商品列表
+                     ============================== -->
                 <div class="table-wrap product-table">
                     <table>
+
+                        <!-- 表頭 -->
                         <thead>
                             <tr>
                                 <th>ID</th>
@@ -147,7 +228,13 @@
                                 <th>功能</th>
                             </tr>
                         </thead>
+
+                        <!-- 資料列
+                             ※ 「功能」欄按鈕：編輯（edit）、刪除（delete）、付款連結管理
+                               data-permission-action 為權限控制用的動作代碼 -->
                         <tbody>
+
+                            <!-- ID 692：[測試] 未上架商品 -->
                             <tr>
                                 <td>692</td>
                                 <td>[測試] 未上架商品</td>
@@ -164,6 +251,8 @@
                                     <button type="button" class="btn gray">付款連結管理</button>
                                 </td>
                             </tr>
+
+                            <!-- ID 687：(免稅) 不定額商品 -->
                             <tr>
                                 <td>687</td>
                                 <td>(免稅) 不定額商品</td>
@@ -180,6 +269,8 @@
                                     <button type="button" class="btn gray">付款連結管理</button>
                                 </td>
                             </tr>
+
+                            <!-- ID 686：(應稅) 不定額商品 -->
                             <tr>
                                 <td>686</td>
                                 <td>(應稅) 不定額商品</td>
@@ -196,6 +287,8 @@
                                     <button type="button" class="btn gray">付款連結管理</button>
                                 </td>
                             </tr>
+
+                            <!-- ID 684：高單價商品 -->
                             <tr>
                                 <td>684</td>
                                 <td>高單價商品</td>
@@ -212,6 +305,8 @@
                                     <button type="button" class="btn gray">付款連結管理</button>
                                 </td>
                             </tr>
+
+                            <!-- ID 682：Lady M -->
                             <tr>
                                 <td>682</td>
                                 <td>Lady M</td>
@@ -228,14 +323,37 @@
                                     <button type="button" class="btn gray">付款連結管理</button>
                                 </td>
                             </tr>
+
                         </tbody>
                     </table>
                 </div>
+
             </main>
+
         </div>
+
+
+        <!-- ==================================================
+             側邊選單收合開關（隱藏的 checkbox）
+             ※ 位置需維持在 shell 之後，樣式可能依賴此相鄰順序，請勿任意移動
+             ================================================== -->
         <input class="collapse-control" type="checkbox" id="collapse">
+
+
+        <!-- ==================================================
+             頁面腳本（置於 body 最後，未使用 defer，依序同步載入執行）
+             ※ 順序：日期選擇器 → 商品彈窗 → 付款連結彈窗，
+               彈窗腳本可能會用到前面的腳本，請勿任意調換
+             ================================================== -->
+
+        <!-- 日期時間選擇器 -->
         <script src="product-date-picker.js?v=modal-confirm-20261015"></script>
+
+        <!-- 商品新增 / 編輯 / 刪除確認彈窗 -->
         <script src="product-modal.js?v=modal-confirm-20261015"></script>
+
+        <!-- 付款連結管理彈窗 -->
         <script src="payment-links.js?v=modal-confirm-20261015"></script>
+
     </body>
 </html>

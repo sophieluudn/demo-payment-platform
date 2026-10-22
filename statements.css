@@ -1,3 +1,28 @@
+/* ==========================================================
+   對帳單表單彈窗（Statement Modal）與搜尋列
+   目錄：
+   1.  彈窗本體
+   2.  標題列與關閉按鈕
+   3.  表單版型
+   4.  對帳類型選項
+   5.  一般輸入框
+   6.  多選下拉選單
+   7.  日期區間
+   8.  備註（textarea）
+   9.  操作按鈕、錯誤訊息與狀態輔助
+   10. 響應式 A（≤700px：彈窗與表單）
+   11. 搜尋列
+   12. 響應式 B（≤600px：搜尋列）
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ========================================================== */
+
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>） */
 .statement-modal {
     width: 80vw;
     max-width: 1600px;
@@ -8,25 +33,34 @@
     border-radius: 2px;
     background: #fff;
     color: #606266;
-    overflow: auto
+    overflow: auto;
 }
 
+/* 彈窗背景遮罩 */
 .statement-modal::backdrop {
-    background: #0008
+    background: #0008;
 }
 
+
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（關閉按鈕以此為定位基準） */
 .statement-modal-heading {
     position: relative;
-    min-height: 64px
+    min-height: 64px;
 }
 
+/* 標題文字 */
 .statement-modal h2 {
     font-size: 18px;
     font-weight: 400;
     margin: 0;
-    color: #303133
+    color: #303133;
 }
 
+/* 關閉按鈕（定位於標題列右上角） */
 .statement-close {
     position: absolute;
     top: 0;
@@ -38,67 +72,98 @@
     justify-content: center;
     background: transparent;
     border: 0;
-    color: #909399
+    color: #909399;
 }
 
+
+/* ==========================================================
+   3. 表單版型
+   ========================================================== */
+
+/* 表單容器：各欄位垂直排列 */
 .statement-fields {
     width: 91%;
     display: flex;
     flex-direction: column;
-    gap: 23px
+    gap: 23px;
 }
 
+/* 欄位列：左側標籤 88px + 右側內容 */
 .statement-form-row {
     display: grid;
     grid-template-columns: 88px minmax(0, 1fr);
     gap: 12px;
-    align-items: center
+    align-items: center;
 }
 
+/* 欄位標籤：靠右對齊、粗體 */
 .statement-form-row>label,
 .statement-label {
     text-align: right;
-    font-weight: 600
+    font-weight: 600;
 }
 
+/* 必填紅色星號 */
 .statement-form-row .required::before {
     content: '* ';
-    color: #f56c6c
+    color: #f56c6c;
 }
 
+
+/* ==========================================================
+   4. 對帳類型選項
+   ========================================================== */
+
+/* 類型選項群組：橫向排列，空間不足時換行 */
 .statement-types {
     display: flex;
     gap: 30px;
     min-height: 40px;
-    flex-wrap: wrap
+    flex-wrap: wrap;
 }
 
+/* 單一選項（輸入元件 + 文字） */
 .statement-types label {
     display: flex;
     align-items: center;
-    gap: 12px
+    gap: 12px;
 }
 
+/* 選項輸入元件：類型選項與多選下拉選單內的選項共用 */
 .statement-types input,
 .statement-multi-options input {
     width: 14px;
     height: 14px;
     accent-color: #409eff;
-    margin: 0
+    margin: 0;
 }
 
+/* 已選取的類型：文字轉為藍色 */
 .statement-types label:has(input:checked) {
-    color: #409eff
+    color: #409eff;
 }
 
+
+/* ==========================================================
+   5. 一般輸入框
+   ========================================================== */
+
+/* 欄位列內直接子層的輸入框：滿寬 */
 .statement-form-row>input {
-    width: 100%
+    width: 100%;
 }
 
+
+/* ==========================================================
+   6. 多選下拉選單（以 <details> / <summary> 實作）
+   ========================================================== */
+
+/* 外層：選項面板以此為定位基準 */
 .statement-multi {
-    position: relative
+    position: relative;
 }
 
+/* 下拉選單的顯示列：外觀類似輸入框，右側帶下拉箭頭 */
 .statement-multi summary {
     height: 40px;
     padding: 5px;
@@ -112,14 +177,16 @@
     font-weight: 400;
     list-style: none;
     cursor: pointer;
-    overflow: hidden
+    overflow: hidden;
 }
 
+/* 尚未選擇時的提示文字（淺灰色） */
 .statement-multi summary.placeholder {
     padding-left: 15px;
-    color: #b7bec8
+    color: #b7bec8;
 }
 
+/* 已選項目標籤：灰底、過長時以省略號截斷 */
 .statement-selected {
     display: inline-block;
     background: #f0f2f5;
@@ -128,9 +195,10 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 80%
+    max-width: 80%;
 }
 
+/* 選項面板：浮動於顯示列下方，過長時於面板內捲動 */
 .statement-multi-options {
     position: absolute;
     top: 44px;
@@ -143,45 +211,61 @@
     border: 1px solid #e4e7ed;
     border-radius: 4px;
     box-shadow: 0 2px 12px #0002;
-    padding: 8px
+    padding: 8px;
 }
 
+/* 單一選項（核取方塊 + 文字） */
 .statement-multi-options label {
     display: flex;
     align-items: center;
     gap: 10px;
     padding: 7px;
-    cursor: pointer
+    cursor: pointer;
 }
 
+
+/* ==========================================================
+   7. 日期區間
+   ========================================================== */
+
+/* 日期區間外框：兩個輸入框並排，外框模擬單一輸入框 */
 .statement-date-range {
     display: flex;
     align-items: center;
     border: 1px solid #dcdfe6;
     border-radius: 4px;
     padding: 0 10px;
-    gap: 12px
+    gap: 12px;
 }
 
+/* 日期輸入框：各佔一半、無邊框、文字置中 */
 .statement-date-range input {
     width: 50%;
     border: 0;
     text-align: center;
     padding: 0 10px;
     min-width: 0;
-    background: transparent
+    background: transparent;
 }
 
+/* 已封存（archived）狀態：灰底灰字 */
 .statement-date-range.archived {
     background: #f5f7fa;
-    color: #b7bec8
+    color: #b7bec8;
 }
 
+/* 日期輸入框：停用狀態 */
 .statement-date-range input:disabled {
     color: #b7bec8;
-    cursor: not-allowed
+    cursor: not-allowed;
 }
 
+
+/* ==========================================================
+   8. 備註（textarea）
+   ========================================================== */
+
+/* 多行文字框：滿寬、可垂直調整高度 */
 .statement-form-row textarea {
     width: 100%;
     font: inherit;
@@ -189,132 +273,174 @@
     padding: 10px 15px;
     border: 1px solid #dcdfe6;
     border-radius: 4px;
-    resize: vertical
+    resize: vertical;
 }
 
+
+/* ==========================================================
+   9. 操作按鈕、錯誤訊息與狀態輔助
+   ========================================================== */
+
+/* 操作按鈕列：靠右排列 */
 .statement-actions {
     display: flex;
     justify-content: flex-end;
     gap: 15px;
-    margin: 60px 60px 0
+    margin: 60px 60px 0;
 }
 
+/* 儲存按鈕：停用狀態 */
 .statement-save:disabled {
     background: #a0cfff;
-    cursor: not-allowed
+    cursor: not-allowed;
 }
 
+/* 錯誤訊息：左邊界 100px = 標籤欄 88px + 間距 12px，與右側內容欄對齊 */
 .statement-error {
     color: #c03639;
-    margin-left: 100px
+    margin-left: 100px;
 }
 
+/* 彈窗內帶有 hidden 屬性的元素一律隱藏（避免被 display 規則蓋過） */
 .statement-modal [hidden] {
-    display: none
+    display: none;
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .statement-modal-open {
-    overflow: hidden
+    overflow: hidden;
 }
 
-@media(width <=700px) {
+
+/* ==========================================================
+   10. 響應式 A（螢幕寬度 ≤ 700px：彈窗與表單）
+   ========================================================== */
+
+@media (width <= 700px) {
+    /* 彈窗本體：改為幾乎滿版 */
     .statement-modal {
         width: calc(100vw - 24px);
         margin: 12px auto;
         max-height: calc(100dvh - 24px);
-        padding: 16px
+        padding: 16px;
     }
 
+    /* 表單容器：滿寬、縮小欄位間距 */
     .statement-fields {
         width: 100%;
-        gap: 16px
+        gap: 16px;
     }
 
+    /* 欄位列：標籤與內容改為上下排列 */
     .statement-form-row {
         grid-template-columns: 1fr;
-        gap: 6px
+        gap: 6px;
     }
 
+    /* 欄位標籤：改為靠左對齊 */
     .statement-form-row>label,
     .statement-label {
-        text-align: left
+        text-align: left;
     }
 
+    /* 類型選項：縮小間距 */
     .statement-types {
-        gap: 12px
+        gap: 12px;
     }
 
+    /* 操作按鈕列：取消左右間距、縮小上方間距 */
     .statement-actions {
-        margin: 28px 0 0
+        margin: 28px 0 0;
     }
 
+    /* 日期區間：縮小間距、取消內距 */
     .statement-date-range {
         gap: 4px;
-        padding: 0
+        padding: 0;
     }
 
+    /* 錯誤訊息：取消左側縮排 */
     .statement-error {
-        margin-left: 0
+        margin-left: 0;
     }
 }
 
+
+/* ==========================================================
+   11. 搜尋列（對帳單列表上方）
+   ========================================================== */
+
+/* 搜尋列容器：橫向排列，空間不足時換行 */
 .statement-search {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 16px;
     min-height: 70px;
-    padding-bottom: 15px
+    padding-bottom: 15px;
 }
 
+/* 欄位：標題與輸入元件的間距 */
 .statement-search .field {
-    gap: 10px
+    gap: 10px;
 }
 
+/* 欄位標題：寬度自動、不換行 */
 .statement-search .field>span {
     width: auto;
-    white-space: nowrap
+    white-space: nowrap;
 }
 
+/* 最後一個按鈕（且非唯一子元素）：取消定位並推到最右側 */
 .statement-search>.btn:last-child:not(:first-child) {
     position: static;
     margin-left: auto;
-    align-self: center
+    align-self: center;
 }
 
+/* 輸入框、下拉選單與按鈕：統一高度 40px */
 .statement-search input,
 .statement-search select,
 .statement-search>.btn {
     box-sizing: border-box;
     height: 40px;
     min-height: 40px;
-    max-height: 40px
+    max-height: 40px;
 }
 
+/* 按鈕：內距歸零，文字垂直置中 */
 .statement-search>.btn {
     padding-top: 0;
     padding-bottom: 0;
     display: inline-flex;
     align-items: center;
-    justify-content: center
+    justify-content: center;
 }
 
-@media(width <=600px) {
+
+/* ==========================================================
+   12. 響應式 B（螢幕寬度 ≤ 600px：搜尋列）
+   ========================================================== */
+
+@media (width <= 600px) {
+    /* 欄位：滿寬，標題與輸入元件改為上下排列 */
     .statement-search .field {
         width: 100%;
         flex-direction: column;
-        align-items: stretch
+        align-items: stretch;
     }
 
     .statement-search .field>span {
-        width: auto
+        width: auto;
     }
 
+    /* 下拉選單：滿寬（!important 用來蓋過其他寬度設定） */
     .statement-search .field select {
-        width: 100% !important
+        width: 100% !important;
     }
 
+    /* 按鈕：靠右對齊 */
     .statement-search>.btn {
-        margin-left: auto
+        margin-left: auto;
     }
 }

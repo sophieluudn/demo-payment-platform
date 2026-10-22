@@ -1,3 +1,20 @@
+/* ==========================================================
+   付款連結彈窗（Payment Links Modal）
+   目錄：
+   1. 彈窗本體
+   2. 標題列與關閉按鈕
+   3. 設定區容器
+   4. 表單欄位（付款方式 / 發票開關 / 返回網址 / 新增按鈕）
+   5. 連結列表表格
+   6. 錯誤訊息與狀態輔助
+   7. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>） */
 .payment-links-modal {
   width: 90vw;
   max-width: 1800px;
@@ -11,15 +28,22 @@
   overflow: auto;
 }
 
+/* 彈窗背景遮罩 */
 .payment-links-modal::backdrop {
   background: #0008;
 }
 
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（關閉按鈕以此為定位基準） */
 .payment-links-heading {
   position: relative;
   min-height: 64px;
 }
 
+/* 標題文字 */
 .payment-links-heading h2 {
   font-size: 18px;
   font-weight: 400;
@@ -27,6 +51,7 @@
   margin: 0;
 }
 
+/* 關閉按鈕（定位於標題列右上角） */
 .payment-links-close {
   position: absolute;
   top: 0;
@@ -42,6 +67,11 @@
   color: #909399;
 }
 
+/* ==========================================================
+   3. 設定區容器
+   ========================================================== */
+
+/* 灰底外框：左側為欄位區，右側 118px 欄放新增按鈕（.payment-link-add） */
 .payment-links-config {
   background: #f0f0f0;
   border-radius: 4px;
@@ -52,17 +82,26 @@
   margin-bottom: 20px;
 }
 
+/* 白底欄位區（放置各表單欄位） */
 .payment-links-fields {
   background: white;
   padding: 10px 35px 30px;
 }
 
+/* ==========================================================
+   4. 表單欄位
+   ========================================================== */
+
+/* ── 4-1. 欄位共用版型：左側標籤 115px + 右側內容 ── */
+
+/* 付款方式欄位 */
 .payment-method-field {
   display: grid;
   grid-template-columns: 115px minmax(0, 1fr);
   gap: 12px;
 }
 
+/* 標籤文字共用樣式：粗體、靠右對齊 */
 .payment-method-label,
 .payment-invoice-field > span,
 .payment-return-field > span {
@@ -70,15 +109,20 @@
   text-align: right;
 }
 
+/* ── 4-2. 付款方式（標籤 + 核取方塊群組） ── */
+
+/* 付款方式標籤：微調與核取方塊的垂直對齊 */
 .payment-method-label {
   padding-top: 2px;
 }
 
+/* 必填紅色星號 */
 .payment-method-label::before {
   content: "* ";
   color: #f56c6c;
 }
 
+/* 單一核取方塊（含文字） */
 .payment-checkbox {
   display: inline-flex;
   align-items: center;
@@ -87,6 +131,7 @@
   white-space: nowrap;
 }
 
+/* 核取方塊本體 */
 .payment-checkbox input {
   width: 14px;
   height: 14px;
@@ -94,12 +139,15 @@
   accent-color: #409eff;
 }
 
+/* 核取方塊群組：自動換行排列 */
 .payment-method-options {
   display: flex;
   flex-wrap: wrap;
   gap: 20px 28px;
   margin: 16px 0 40px;
 }
+
+/* ── 4-3. 發票與返回網址欄位（版型與付款方式欄位相同） ── */
 
 .payment-invoice-field,
 .payment-return-field {
@@ -109,10 +157,14 @@
   gap: 12px;
 }
 
+/* 發票欄位：與下一個欄位的間距 */
 .payment-invoice-field {
   margin: 4px 0 35px;
 }
 
+/* ── 4-4. 開關（Switch，狀態由 aria-checked 控制） ── */
+
+/* 開關底座（預設為關閉：灰色） */
 .payment-switch {
   width: 40px;
   height: 20px;
@@ -124,6 +176,7 @@
   flex-shrink: 0;
 }
 
+/* 開關圓點（預設在左側） */
 .payment-switch::after {
   content: "";
   position: absolute;
@@ -135,19 +188,25 @@
   background: #fff;
 }
 
+/* 開啟狀態：底座轉為藍色 */
 .payment-switch[aria-checked="true"] {
   background: #409eff;
 }
 
+/* 開啟狀態：圓點移到右側 */
 .payment-switch[aria-checked="true"]::after {
   left: 22px;
 }
 
+/* ── 4-5. 返回網址輸入框與新增按鈕 ── */
+
+/* 返回網址輸入框 */
 .payment-return-field input {
   height: 32px;
   width: 90%;
 }
 
+/* 新增按鈕（位於設定區右側欄，置中） */
 .payment-link-add {
   justify-self: center;
   width: 50px;
@@ -155,23 +214,31 @@
   font-size: 18px;
 }
 
+/* ==========================================================
+   5. 連結列表表格
+   ========================================================== */
+
+/* 表格外層：固定最小高度，內容過寬時於此捲動 */
 .payment-links-table-wrap {
   min-height: 400px;
   border: 1px solid #ebeef5;
   overflow: auto;
 }
 
+/* 表格本體：最小寬度 1100px，避免欄位被過度壓縮 */
 .payment-links-table {
   min-width: 1100px;
   border-collapse: collapse;
 }
 
+/* 儲存格共用樣式（表頭與內容） */
 .payment-links-table th,
 .payment-links-table td {
   border: 1px solid #ebeef5;
   font-size: 14px;
 }
 
+/* 各欄寬度（依欄位順序設定；百分比欄會吃掉剩餘空間） */
 .payment-links-table th:first-child {
   width: 80px;
 }
@@ -196,15 +263,18 @@
   width: 28%;
 }
 
+/* 內容列高度 */
 .payment-links-table td {
   height: 70px;
 }
 
+/* 無資料時的提示列 */
 .payment-links-table .payment-links-empty {
   height: 350px;
   color: #909399;
 }
 
+/* 付款方式標籤（chip） */
 .payment-method-chip {
   display: inline-block;
   padding: 0 7px;
@@ -215,25 +285,38 @@
   line-height: 22px;
 }
 
+/* 連結網址：靠左對齊，過長時自動換行 */
 .payment-link-url {
   text-align: left;
   overflow-wrap: anywhere;
 }
 
+/* ==========================================================
+   6. 錯誤訊息與狀態輔助
+   ========================================================== */
+
+/* 錯誤訊息：左邊界 127px = 標籤欄 115px + 間距 12px，與右側內容欄對齊 */
 .payment-links-error {
   color: #c03639;
   margin: 12px 0 0 127px;
 }
 
+/* 彈窗內帶有 hidden 屬性的元素一律隱藏（避免被 display 規則蓋過） */
 .payment-links-modal [hidden] {
   display: none;
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .payment-links-open {
   overflow: hidden;
 }
 
-@media (width <=700px) {
+/* ==========================================================
+   7. 響應式（螢幕寬度 ≤ 700px）
+   ========================================================== */
+
+@media (width <= 700px) {
+  /* 彈窗本體：改為幾乎滿版 */
   .payment-links-modal {
     width: calc(100vw - 24px);
     margin: 12px auto;
@@ -241,16 +324,19 @@
     padding: 16px;
   }
 
+  /* 設定區：改為單欄，新增按鈕移到下方 */
   .payment-links-config {
     grid-template-columns: 1fr;
     padding: 10px;
     gap: 12px;
   }
 
+  /* 欄位區：縮減內距 */
   .payment-links-fields {
     padding: 12px;
   }
 
+  /* 各欄位：標籤與內容改為上下排列 */
   .payment-method-field,
   .payment-invoice-field,
   .payment-return-field {
@@ -258,29 +344,35 @@
     gap: 8px;
   }
 
+  /* 標籤文字：改為靠左對齊 */
   .payment-method-label,
   .payment-invoice-field > span,
   .payment-return-field > span {
     text-align: left;
   }
 
+  /* 付款方式選項：縮小間距 */
   .payment-method-options {
     gap: 12px;
     margin-bottom: 24px;
   }
 
+  /* 發票欄位：縮小下方間距 */
   .payment-invoice-field {
     margin-bottom: 20px;
   }
 
+  /* 返回網址輸入框：滿寬 */
   .payment-return-field input {
     width: 100%;
   }
 
+  /* 新增按鈕：靠右對齊 */
   .payment-link-add {
     justify-self: end;
   }
 
+  /* 錯誤訊息：取消左側縮排（版面已改為單欄） */
   .payment-links-error {
     margin-left: 0;
   }

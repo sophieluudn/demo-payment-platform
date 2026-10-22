@@ -1,3 +1,35 @@
+/* ==========================================================
+   商品彈窗（Product Modal）與商品列表
+   目錄：
+   1.  彈窗本體
+   2.  標題列與關閉按鈕
+   3.  表單版型與基本欄位
+   4.  價格欄位
+   5.  日期與結束時間欄位
+   6.  稅別選項
+   7.  備註（textarea）
+   8.  底部操作按鈕、錯誤訊息與狀態輔助
+   9.  響應式 A（≤1000px、≤600px：彈窗與表單）
+   10. 價格說明提示框（Tooltip）
+   11. 響應式 B（≤1000px、≤600px：Tooltip）
+   12. 停用（disabled）狀態
+   13. 日期時間選擇器
+   14. 商品列表按鈕與刪除確認彈窗
+   15. 後續覆寫規則（調整彈窗尺寸與間距）
+   16. 商品列表工具列
+
+   ※ 重要：本檔案依「規則順序」決定最終效果（後面的規則會蓋過
+     前面同權重的規則），整理時未更動任何順序，請勿任意調換。
+     已知被後面覆寫的屬性，皆於第 15 節說明。
+   ========================================================== */
+
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>）
+   ※ max-height 與 margin 之後會在第 15 節被覆寫 */
 .product-modal {
   width: 60vw;
   max-width: 1200px;
@@ -10,15 +42,24 @@
   overflow: auto;
 }
 
+/* 彈窗背景遮罩 */
 .product-modal::backdrop {
   background: #0008;
 }
 
+
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（關閉按鈕以此為定位基準）
+   ※ min-height 之後會在第 15 節被覆寫 */
 .product-modal-heading {
   position: relative;
   min-height: 64px;
 }
 
+/* 標題文字 */
 .product-modal h2 {
   font-size: 18px;
   font-weight: 400;
@@ -26,6 +67,7 @@
   margin: 0;
 }
 
+/* 關閉按鈕（定位於標題列右上角；刪除確認彈窗也共用此 class） */
 .product-modal-close {
   position: absolute;
   top: 0;
@@ -41,6 +83,15 @@
   border: 0;
 }
 
+
+/* ==========================================================
+   3. 表單版型與基本欄位
+   ========================================================== */
+
+/* ── 3-1. 表單容器與欄位列 ── */
+
+/* 表單容器：置中、各欄位垂直排列
+   ※ gap 之後會在第 15 節被覆寫 */
 .product-form-fields {
   width: 76%;
   margin: 0 auto;
@@ -49,6 +100,7 @@
   gap: 23px;
 }
 
+/* 欄位列：左側標籤 110px + 右側內容 */
 .product-form-row {
   display: grid;
   grid-template-columns: 110px minmax(0, 1fr);
@@ -56,6 +108,7 @@
   align-items: start;
 }
 
+/* 欄位標籤：粗體、靠右對齊 */
 .product-form-row > label,
 .product-form-label {
   font-weight: 600;
@@ -63,56 +116,79 @@
   padding-top: 10px;
 }
 
+/* 必填紅色星號 */
 .product-form-row .required::before {
   content: "* ";
   color: #f56c6c;
 }
 
+/* ── 3-2. 輸入元件 ── */
+
+/* 欄位內的輸入框、下拉選單、多行文字：滿寬 */
 .product-form-row > input,
 .product-form-row > select,
 .product-form-row > textarea {
   width: 100%;
 }
 
+/* 下拉選單：一般文字為黑色 */
 .product-modal select {
   color: #000;
 }
 
+/* 下拉選單：尚未選擇時（placeholder）為淺灰色 */
 .product-modal select.placeholder {
   color: #b7bec8;
 }
 
+/* 下拉選項：可選項目為黑色 */
 .product-modal option:not(:disabled) {
   color: #000;
 }
 
+/* 第一列的下拉選單：固定寬度，不滿寬 */
 .product-form-row:first-child select {
   width: 235px;
   max-width: 100%;
 }
 
+
+/* ==========================================================
+   4. 價格欄位
+   ========================================================== */
+
+/* 價格輸入區：橫向排列 */
 .product-price-controls {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
+/* 價格輸入框：固定寬度、文字置中 */
 .product-price-controls input {
   width: 180px;
   text-align: center;
 }
 
+/* 價格說明圖示（藍色） */
 .product-price-info {
   display: flex;
   color: #409eff;
 }
 
+/* 價格欄位下方的輔助說明文字 */
 .product-price-help {
   font-size: 12px;
   color: #797979;
   margin: 12px 0 10px;
 }
 
+
+/* ==========================================================
+   5. 日期與結束時間欄位
+   ========================================================== */
+
+/* 日期輸入框：左側帶時鐘圖示，預留 30px 內距 */
 .product-form-row .product-date {
   width: 220px;
   max-width: 100%;
@@ -120,16 +196,24 @@
   padding-left: 30px;
 }
 
+/* 結束時間操作區：橫向排列 */
 .product-end-controls {
   display: flex;
   align-items: center;
   gap: 4px;
 }
 
+/* 結束時間操作區內的按鈕 */
 .product-end-controls .btn {
   padding: 10px 20px;
 }
 
+
+/* ==========================================================
+   6. 稅別選項
+   ========================================================== */
+
+/* 稅別選項群組：橫向排列 */
 .product-tax {
   display: flex;
   gap: 32px;
@@ -137,12 +221,14 @@
   min-height: 40px;
 }
 
+/* 單一選項（核取方塊 + 文字） */
 .product-tax label {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+/* 核取方塊本體 */
 .product-tax input {
   width: 14px;
   height: 14px;
@@ -150,10 +236,17 @@
   accent-color: #409eff;
 }
 
+/* 已勾選的選項：文字轉為藍色 */
 .product-tax label:has(input:checked) {
   color: #409eff;
 }
 
+
+/* ==========================================================
+   7. 備註（textarea）
+   ========================================================== */
+
+/* 多行文字框基本樣式 */
 .product-modal textarea {
   font: inherit;
   color: #606266;
@@ -163,14 +256,23 @@
   resize: vertical;
 }
 
+/* 提示文字（placeholder） */
 .product-modal textarea::placeholder {
   color: #b7bec8;
 }
 
+/* 取得焦點時的外框 */
 .product-modal textarea:focus {
   outline: 1px solid #409eff;
 }
 
+
+/* ==========================================================
+   8. 底部操作按鈕、錯誤訊息與狀態輔助
+   ========================================================== */
+
+/* 操作按鈕列：靠右排列
+   ※ 上方間距之後會在第 15 節被覆寫 */
 .product-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -178,40 +280,55 @@
   margin: 60px 60px 0;
 }
 
+/* 儲存按鈕：停用狀態 */
 .product-save:disabled {
   background: #a0cfff;
   cursor: not-allowed;
 }
 
+/* 表單錯誤訊息：左側縮排，大致對齊右側內容欄 */
 .product-form-error {
   color: #c03639;
   margin-left: 24%;
   font-size: 13px;
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .product-modal-open {
   overflow: hidden;
 }
 
+/* 彈窗內帶有 hidden 屬性的元素一律隱藏（避免被 display 規則蓋過） */
 .product-modal [hidden] {
   display: none;
 }
 
-@media (width <=1000px) {
+
+/* ==========================================================
+   9. 響應式 A（彈窗與表單）
+   ========================================================== */
+
+/* ── 螢幕寬度 ≤ 1000px ── */
+@media (width <= 1000px) {
+  /* 彈窗本體：加寬 */
   .product-modal {
     width: 85vw;
   }
 
+  /* 表單容器：加寬 */
   .product-form-fields {
     width: 95%;
   }
 
+  /* 操作按鈕列：取消右側間距 */
   .product-modal-actions {
     margin-right: 0;
   }
 }
 
-@media (width <=600px) {
+/* ── 螢幕寬度 ≤ 600px ── */
+@media (width <= 600px) {
+  /* 彈窗本體：幾乎滿版 */
   .product-modal {
     width: calc(100vw - 24px);
     margin: 12px auto;
@@ -219,37 +336,49 @@
     padding: 16px;
   }
 
+  /* 表單容器：滿寬，縮小欄位間距 */
   .product-form-fields {
     width: 100%;
     gap: 16px;
   }
 
+  /* 欄位列：標籤與內容改為上下排列 */
   .product-form-row {
     grid-template-columns: 1fr;
     gap: 6px;
   }
 
+  /* 欄位標籤：改為靠左對齊 */
   .product-form-row > label,
   .product-form-label {
     text-align: left;
     padding-top: 0;
   }
 
+  /* 操作按鈕列：縮小上方間距 */
   .product-modal-actions {
     margin-top: 28px;
   }
 
+  /* 錯誤訊息：取消左側縮排 */
   .product-form-error {
     margin-left: 0;
   }
 }
 
+
+/* ==========================================================
+   10. 價格說明提示框（Tooltip）
+   ========================================================== */
+
+/* 說明圖示外層：提示框以此為定位基準 */
 .product-price-info-wrapper {
   position: relative;
   display: flex;
   align-items: center;
 }
 
+/* 說明圖示按鈕 */
 .product-price-info-wrapper button {
   align-items: center;
   justify-content: center;
@@ -262,6 +391,7 @@
   cursor: pointer;
 }
 
+/* 提示框本體：預設顯示於圖示右側 */
 .product-price-tooltip {
   position: absolute;
   left: calc(100% + 20px);
@@ -278,6 +408,7 @@
   font-weight: 400;
 }
 
+/* 提示框箭頭：指向左側圖示 */
 .product-price-tooltip::before {
   content: "";
   position: absolute;
@@ -287,7 +418,14 @@
   border-right-color: #303133;
 }
 
-@media (width <=1000px) {
+
+/* ==========================================================
+   11. 響應式 B（價格說明提示框）
+   ========================================================== */
+
+/* ── 螢幕寬度 ≤ 1000px：提示框改顯示於圖示下方 ── */
+@media (width <= 1000px) {
+  /* 提示框本體 */
   .product-price-tooltip {
     left: auto;
     right: 0;
@@ -296,6 +434,7 @@
     max-width: calc(100vw - 56px);
   }
 
+  /* 提示框箭頭：改為指向上方 */
   .product-price-tooltip::before {
     right: 6px;
     top: auto;
@@ -305,16 +444,25 @@
   }
 }
 
-@media (width <=600px) {
+/* ── 螢幕寬度 ≤ 600px：提示框向左位移，避免超出畫面 ── */
+@media (width <= 600px) {
+  /* 提示框本體 */
   .product-price-tooltip {
     right: -60px;
   }
 
+  /* 提示框箭頭：配合位移調整 */
   .product-price-tooltip::before {
     right: 66px;
   }
 }
 
+
+/* ==========================================================
+   12. 停用（disabled）狀態
+   ========================================================== */
+
+/* 彈窗內停用的輸入框與下拉選單：灰底、禁止游標 */
 .product-modal input:disabled,
 .product-modal select:disabled {
   background-color: #f5f7fa;
@@ -322,6 +470,14 @@
   cursor: not-allowed;
 }
 
+
+/* ==========================================================
+   13. 日期時間選擇器
+   ========================================================== */
+
+/* ── 13-1. 選擇器容器 ── */
+
+/* 浮動面板（fixed 定位，位置由腳本設定） */
 .product-date-picker {
   position: fixed;
   z-index: 5;
@@ -332,6 +488,8 @@
   color: #606266;
   font-size: 14px;
 }
+
+/* ── 13-2. 頂部輸入列（日期 / 時間輸入框，各佔一半） ── */
 
 .picker-inputs {
   display: flex;
@@ -346,6 +504,8 @@
   padding: 0 8px;
   font-size: 12px;
 }
+
+/* ── 13-3. 月份切換列 ── */
 
 .picker-navigation {
   display: flex;
@@ -366,6 +526,8 @@
   font-size: 16px;
 }
 
+/* ── 13-4. 星期列與日期格（7 欄） ── */
+
 .picker-weekdays,
 .picker-days {
   display: grid;
@@ -373,12 +535,14 @@
   padding: 0 12px;
 }
 
+/* 星期標題 */
 .picker-weekdays span {
   text-align: center;
   padding: 12px 0;
   border-bottom: 1px solid #ebeef5;
 }
 
+/* 日期按鈕 */
 .picker-days button {
   height: 38px;
   padding: 0;
@@ -389,20 +553,25 @@
   border-radius: 3px;
 }
 
+/* 日期按鈕：滑鼠移入 */
 .picker-days button:hover {
   background: #ecf5ff;
   color: #409eff;
 }
 
+/* 非本月日期：淺灰色 */
 .picker-days .outside-month {
   color: #c0c4cc;
 }
 
+/* 已選取日期：藍色、粗體、淺藍底 */
 .picker-days .selected {
   color: #409eff;
   font-weight: 600;
   background: #ecf5ff;
 }
+
+/* ── 13-5. 底部操作列（此刻 / 確定等） ── */
 
 .picker-actions {
   display: flex;
@@ -418,25 +587,40 @@
   padding: 5px 12px;
 }
 
+/* 「此刻」按鈕：文字樣式 */
 .picker-now {
   border: 0;
   background: transparent;
   color: #409eff;
 }
 
+/* ── 13-6. 隱藏狀態 ── */
+
 .product-date-picker[hidden] {
   display: none;
 }
 
+
+/* ==========================================================
+   14. 商品列表按鈕與刪除確認彈窗
+   ========================================================== */
+
+/* ── 14-1. 列表中的刪除按鈕 ── */
+
+/* 刪除按鈕：可用狀態（紅色） */
 .product-table .danger:not(:disabled) {
   background: #f56c6c;
 }
 
+/* 刪除按鈕：停用狀態（淺紅色） */
 .product-table .danger:disabled {
   background: #fab6b6;
   cursor: not-allowed;
 }
 
+/* ── 14-2. 刪除確認彈窗（<dialog>） ── */
+
+/* 彈窗本體 */
 .product-delete-confirm {
   width: 420px;
   max-width: calc(100vw - 24px);
@@ -447,63 +631,94 @@
   box-shadow: 0 2px 12px #0002;
 }
 
+/* 背景遮罩 */
 .product-delete-confirm::backdrop {
   background: #0008;
 }
 
+/* 關閉按鈕：共用 .product-modal-close，此處調整位置 */
 .product-delete-confirm > .product-modal-close {
   top: 12px;
   right: 12px;
 }
 
+/* 確認訊息文字 */
 .product-delete-confirm p {
   margin: 7px 0 18px;
 }
 
+/* 操作按鈕列：靠右排列 */
 .product-delete-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
 }
 
+/* 操作按鈕尺寸 */
 .product-delete-actions .btn {
   font-size: 12px;
   padding: 8px 15px;
 }
 
+
+/* ==========================================================
+   15. 後續覆寫規則（調整彈窗尺寸與間距）
+   ※ 本節規則與前面同權重，因位置在後而生效，實際生效值如下：
+     .product-modal          max-height 100dvh - 48px、margin 24px auto
+                             （覆寫第 1 節的 6px / 3px auto）
+     .product-modal-heading  min-height 52px（覆寫第 2 節的 64px）
+     .product-form-fields    gap 16px（覆寫第 3 節的 23px）
+     .product-modal-actions  margin-top 32px（覆寫第 8 節的 60px，
+                             亦覆寫第 9 節 ≤600px 的 28px）
+   ========================================================== */
+
+/* 彈窗本體：高度上限與上下間距 */
 .product-modal {
   max-height: calc(100dvh - 48px);
   margin: 24px auto;
 }
 
+/* 標題列：縮小最小高度 */
 .product-modal-heading {
   min-height: 52px;
 }
 
+/* 表單容器：縮小欄位間距 */
 .product-form-fields {
   gap: 16px;
 }
 
+/* 操作按鈕列：縮小上方間距 */
 .product-modal-actions {
   margin-top: 32px;
 }
 
+/* 備註欄位：固定高度 72px */
 .product-modal #new-product-notes {
   min-height: 72px;
   height: 72px;
 }
 
-@media (width <=600px) {
+/* ── 螢幕寬度 ≤ 600px：重新套用手機版的間距（用來蓋過上方的覆寫） ── */
+@media (width <= 600px) {
+  /* 彈窗本體 */
   .product-modal {
     margin: 12px auto;
     max-height: calc(100dvh - 24px);
   }
 
+  /* 操作按鈕列：上方間距 24px */
   .product-modal-actions {
     margin-top: 24px;
   }
 }
 
+
+/* ==========================================================
+   16. 商品列表工具列
+   ========================================================== */
+
+/* 工具列：左側分頁、右側新增按鈕，空間不足時換行 */
 .product-list-toolbar {
   display: flex;
   align-items: center;
@@ -513,6 +728,7 @@
   margin-bottom: 12px;
 }
 
+/* 工具列內的分頁元件：取消預設間距，允許換行 */
 .product-list-toolbar > .pager {
   margin: 0;
   height: auto;
@@ -520,10 +736,12 @@
   flex-wrap: wrap;
 }
 
+/* 工具列內的新增按鈕：推到最右側 */
 .product-list-toolbar > .success {
   margin-left: auto;
 }
 
+/* 列表最後一欄：主要按鈕與相鄰按鈕之間留間距 */
 .product-table td:last-child > .btn.primary {
   margin-right: 12px;
 }

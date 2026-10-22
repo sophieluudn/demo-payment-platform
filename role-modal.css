@@ -1,3 +1,23 @@
+/* ==========================================================
+   角色彈窗（Role Modal）
+   目錄：
+   1. 彈窗本體
+   2. 標題列與關閉按鈕
+   3. 基本資料表單（版型、輸入框、備註）
+   4. 狀態開關
+   5. 核取方塊與隱藏輸入
+   6. 權限表格
+   7. 操作按鈕、錯誤訊息與狀態輔助
+   8. 響應式
+
+   ※ 本檔案依「規則順序」決定最終效果，整理時未更動任何順序。
+   ========================================================== */
+
+/* ==========================================================
+   1. 彈窗本體
+   ========================================================== */
+
+/* 彈窗容器（<dialog>） */
 .role-modal {
   width: 70vw;
   max-width: 1200px;
@@ -11,15 +31,22 @@
   overflow: auto;
 }
 
+/* 彈窗背景遮罩 */
 .role-modal::backdrop {
   background: #0008;
 }
 
+/* ==========================================================
+   2. 標題列與關閉按鈕
+   ========================================================== */
+
+/* 標題列容器（關閉按鈕以此為定位基準） */
 .role-modal-heading {
   position: relative;
   margin-bottom: 24px;
 }
 
+/* 標題文字 */
 .role-modal h2 {
   margin: 0;
   font-size: 18px;
@@ -27,6 +54,7 @@
   color: #303133;
 }
 
+/* 關閉按鈕（定位於標題列右上角） */
 .role-close {
   position: absolute;
   top: 0;
@@ -42,12 +70,20 @@
   cursor: pointer;
 }
 
+/* ==========================================================
+   3. 基本資料表單（版型、輸入框、備註）
+   ========================================================== */
+
+/* ── 3-1. 表單容器與欄位列 ── */
+
+/* 表單容器：各欄位垂直排列 */
 .role-basics {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
 
+/* 欄位列：左側標籤 100px + 右側內容 */
 .role-basics > label,
 .role-setting-row {
   display: grid;
@@ -56,23 +92,36 @@
   align-items: center;
 }
 
+/* ── 3-2. 欄位標籤 ── */
+
+/* 標籤文字：粗體、靠右對齊 */
 .role-setting-label {
   text-align: right;
   font-weight: 600;
   color: #606266;
 }
 
+/* 備註與權限列：標籤改為頂端對齊，並微調上方內距 */
 .role-note .role-setting-label,
 .role-permissions-row .role-setting-label {
   align-self: start;
   padding-top: 10px;
 }
 
+/* 權限列：內容頂端對齊 */
 .role-permissions-row {
   align-items: start;
 }
-.role-permissions-row > .role-setting-label { padding-top: 0; line-height: 1.6; }
 
+/* 權限列的標籤：取消上方內距（覆寫上方的 padding-top: 10px），並設定行高 */
+.role-permissions-row > .role-setting-label {
+  padding-top: 0;
+  line-height: 1.6;
+}
+
+/* ── 3-3. 輸入元件 ── */
+
+/* 輸入框與下拉選單：滿寬、固定高度 40px */
 .role-basics input,
 .role-basics select {
   width: 100%;
@@ -84,11 +133,13 @@
   background: #fff;
 }
 
+/* 下拉選單：停用狀態（灰底） */
 .role-basics select:disabled {
   background-color: #f5f7fa;
   color: #909399;
 }
 
+/* 備註多行文字框：可垂直調整高度 */
 .role-note textarea {
   font: inherit;
   border: 1px solid #dcdfe6;
@@ -99,16 +150,23 @@
   width: 100%;
 }
 
+/* ==========================================================
+   4. 狀態開關
+   ========================================================== */
+
+/* 狀態控制區：開關與狀態文字橫向排列 */
 .role-status-controls {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
+/* 狀態文字（最後一個 span）：藍色 */
 .role-status-controls > span:last-of-type {
   color: #409eff;
 }
 
+/* 開關底座（預設為關閉：灰色；切換時有 0.2 秒過場） */
 .role-status-switch {
   width: 40px;
   height: 20px;
@@ -121,6 +179,7 @@
   transition: background-color 0.2s;
 }
 
+/* 開關圓點（預設在左側） */
 .role-status-switch::after {
   content: "";
   position: absolute;
@@ -133,14 +192,21 @@
   transition: left 0.2s;
 }
 
+/* 開啟狀態（由 aria-checked 控制）：底座轉為藍色 */
 .role-status-switch[aria-checked="true"] {
   background: #409eff;
 }
 
+/* 開啟狀態：圓點移到右側 */
 .role-status-switch[aria-checked="true"]::after {
   left: 22px;
 }
 
+/* ==========================================================
+   5. 核取方塊與隱藏輸入
+   ========================================================== */
+
+/* 彈窗內所有核取方塊：統一尺寸與主題色 */
 .role-modal input[type="checkbox"] {
   width: 14px;
   height: 14px;
@@ -148,22 +214,30 @@
   accent-color: #409eff;
 }
 
+/* 帶有 hidden 屬性的輸入框：隱藏 */
 .role-modal input[hidden] {
   display: none;
 }
 
+/* ==========================================================
+   6. 權限表格
+   ========================================================== */
+
+/* 表格外層：內容過寬時於此捲動 */
 .role-permission-grid {
   display: block;
   overflow: auto;
   width: 100%;
 }
 
+/* 表格本體 */
 .role-permission-table {
   min-width: 0;
   width: 100%;
   border-collapse: collapse;
 }
 
+/* 儲存格共用樣式（表頭與內容） */
 .role-permission-table th,
 .role-permission-table td {
   text-align: left;
@@ -172,22 +246,26 @@
   border: 1px solid #ebeef5;
 }
 
+/* 表頭：淺灰底、粗體 */
 .role-permission-table thead th {
   background: #f5f7fa;
   color: #606266;
   font-weight: 600;
 }
 
+/* 第一欄寬度 */
 .role-permission-table th:first-child {
   width: 160px;
 }
 
+/* 列標題（tbody 內的 th）：粗體、淺灰底 */
 .role-permission-table tbody th {
   font-weight: 600;
   color: #303133;
   background: #fafafa;
 }
 
+/* 權限選項群組：橫向排列，空間不足時換行 */
 .role-permission-options {
   display: flex;
   align-items: center;
@@ -195,6 +273,7 @@
   gap: 16px 24px;
 }
 
+/* 單一權限選項（核取方塊 + 文字） */
 .role-permission-options label {
   padding: 0;
   margin: 0;
@@ -205,6 +284,7 @@
   cursor: pointer;
 }
 
+/* 群組切換選項：右側加分隔線，與其他選項區隔 */
 .role-permission-options .role-group-toggle {
   border: 0;
   border-right: 1px solid #ebeef5;
@@ -212,6 +292,11 @@
   margin: 0;
 }
 
+/* ==========================================================
+   7. 操作按鈕、錯誤訊息與狀態輔助
+   ========================================================== */
+
+/* 操作按鈕列：靠右排列 */
 .role-modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -219,26 +304,37 @@
   margin-top: 32px;
 }
 
+/* 錯誤訊息：左邊界 116px = 標籤欄 100px + 間距 16px，與右側內容欄對齊 */
 .role-error {
   color: #c03639;
   margin: 10px 0 0 116px;
 }
 
+/* 彈窗內帶有 hidden 屬性的元素一律隱藏（避免被 display 規則蓋過） */
 .role-modal [hidden] {
   display: none;
 }
 
+/* 彈窗開啟時，鎖定頁面捲動（加在 body 或外層容器上） */
 .role-modal-open {
   overflow: hidden;
 }
 
+/* ==========================================================
+   8. 響應式
+   ========================================================== */
+
+/* ── 螢幕寬度 ≤ 1000px ── */
 @media (width <= 1000px) {
+  /* 彈窗本體：加寬 */
   .role-modal {
     width: 90vw;
   }
 }
 
+/* ── 螢幕寬度 ≤ 600px ── */
 @media (width <= 600px) {
+  /* 彈窗本體：幾乎滿版 */
   .role-modal {
     width: calc(100vw - 24px);
     margin: 12px auto;
@@ -246,25 +342,30 @@
     padding: 16px;
   }
 
+  /* 欄位列：標籤欄縮為 80px、間距縮為 12px */
   .role-basics > label,
   .role-setting-row {
     grid-template-columns: 80px minmax(0, 1fr);
     gap: 12px;
   }
 
+  /* 權限表格：第一欄縮為 105px */
   .role-permission-table th:first-child {
     width: 105px;
   }
 
+  /* 權限表格：縮小儲存格左右內距 */
   .role-permission-table th,
   .role-permission-table td {
     padding: 12px 10px;
   }
 
+  /* 權限選項群組：縮小間距 */
   .role-permission-options {
     gap: 12px 16px;
   }
 
+  /* 錯誤訊息：取消左側縮排 */
   .role-error {
     margin-left: 0;
   }
